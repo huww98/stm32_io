@@ -216,5 +216,31 @@ void EXTI15_10_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+void handle_btn(GPIO_TypeDef *btn_port, uint16_t btn_pin, GPIO_TypeDef *led_port, uint16_t led_pin) {
+  if (HAL_GPIO_ReadPin(btn_port, btn_pin) == GPIO_PIN_RESET) {
+    HAL_GPIO_WritePin(led_port, led_pin, GPIO_PIN_RESET);
+    while (HAL_GPIO_ReadPin(btn_port, btn_pin) == GPIO_PIN_RESET); // wait for button release
+    HAL_GPIO_WritePin(led_port, led_pin, GPIO_PIN_SET);
+  } else {
+    HAL_GPIO_WritePin(led_port, led_pin, GPIO_PIN_SET);
+  }
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+  switch (GPIO_Pin) {
+    case BTN0_Pin:
+      handle_btn(BTN0_GPIO_Port, BTN0_Pin, LED0_GPIO_Port, LED0_Pin);
+      break;
+    case BTN1_Pin:
+      handle_btn(BTN1_GPIO_Port, BTN1_Pin, LED1_GPIO_Port, LED1_Pin);
+      break;
+    case BTN2_Pin:
+      handle_btn(BTN2_GPIO_Port, BTN2_Pin, LED2_GPIO_Port, LED2_Pin);
+      break;
+    case BTN3_Pin:
+      handle_btn(BTN3_GPIO_Port, BTN3_Pin, LED3_GPIO_Port, LED3_Pin);
+      break;
+  }
+}
 
 /* USER CODE END 1 */
