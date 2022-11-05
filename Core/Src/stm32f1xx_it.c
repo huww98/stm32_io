@@ -22,6 +22,7 @@
 #include "stm32f1xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "74hc595.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -226,19 +227,32 @@ void handle_btn(GPIO_TypeDef *btn_port, uint16_t btn_pin, GPIO_TypeDef *led_port
   }
 }
 
+struct r74hc595_handler shutter_trigger_handler = {
+  .ser_port = SER_GPIO_Port,
+  .ser_pin = SER_Pin,
+  .rck_port = RCK_GPIO_Port,
+  .rck_pin = RCK_Pin,
+  .sck_port = SCK_GPIO_Port,
+  .sck_pin = SCK_Pin,
+  .delay = 128,
+};
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+  static uint8_t data = 0;
+  static uint8_t visual = 0;
   switch (GPIO_Pin) {
-    case BTN0_Pin:
-      handle_btn(BTN0_GPIO_Port, BTN0_Pin, LED0_GPIO_Port, LED0_Pin);
-      break;
     case BTN1_Pin:
-      handle_btn(BTN1_GPIO_Port, BTN1_Pin, LED1_GPIO_Port, LED1_Pin);
-      break;
-    case BTN2_Pin:
-      handle_btn(BTN2_GPIO_Port, BTN2_Pin, LED2_GPIO_Port, LED2_Pin);
-      break;
-    case BTN3_Pin:
-      handle_btn(BTN3_GPIO_Port, BTN3_Pin, LED3_GPIO_Port, LED3_Pin);
+      data <<= 1;
+      visual++;
+      if (data == 0) {
+        data = 1;
+        visual = 0;
+      }
+      r74hc595_write(&shutter_trigger_handler, &data, 1);
+
+      HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, ((visual >> 0) & 1) ? GPIO_PIN_RESET : GPIO_PIN_SET);
+      HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, ((visual >> 1) & 1) ? GPIO_PIN_RESET : GPIO_PIN_SET);
+      HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, ((visual >> 2) & 1) ? GPIO_PIN_RESET : GPIO_PIN_SET);
       break;
   }
 }

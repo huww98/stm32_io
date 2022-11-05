@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "oled.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -55,7 +56,13 @@ static void MX_I2C1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+struct oled_handle oled = {
+  .rst_port = OLED_RE__GPIO_Port,
+  .rst_pin = OLED_RE__Pin,
+  .pwr_port = OLED_PWR_GPIO_Port,
+  .pwr_pin = OLED_PWR_Pin,
+  .i2c = &hi2c1,
+};
 /* USER CODE END 0 */
 
 /**
@@ -93,8 +100,11 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  HAL_Delay(1000);
+  oled_init(&oled);
   while (1)
   {
+    oled_test_seq(oled.i2c);
     __WFI();
     /* USER CODE END WHILE */
 
