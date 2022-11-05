@@ -101,9 +101,14 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   HAL_Delay(1000);
   oled_init(&oled);
+  struct oled_text_mode txt;
+  oled_text_mode_init(&txt, &oled);
+  oled_write_string(&txt, "Hello World!\n");
+  oled_write_string(&txt, "This is a very loooooong line of text.\n");
+  oled_write_string(&txt, "\ta\nt\ta\nta\ta\ntab\ta\n");
   while (1)
   {
-    oled_test_seq(oled.i2c);
+    // oled_test_seq(oled.i2c);
     __WFI();
     /* USER CODE END WHILE */
 
