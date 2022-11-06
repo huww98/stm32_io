@@ -1,8 +1,8 @@
 #include "oled.h"
 #include "utils.h"
 
-#define OLED_I2C_ADDR (0b111100 << 1)
-const uint8_t font6x8[][6] =
+constexpr uint8_t OLED_I2C_ADDR = 0b111100 << 1;
+constexpr uint8_t font6x8[][6] =
 {
 {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},// sp
 {0x00, 0x00, 0x00, 0x2f, 0x00, 0x00},// !
@@ -98,47 +98,30 @@ const uint8_t font6x8[][6] =
 {0x14, 0x14, 0x14, 0x14, 0x14, 0x14},// horiz lines
 };
 
-void oled_command_1(I2C_HandleTypeDef *i2c, uint8_t cmd0) {
-  uint8_t data[2];
-  data[0] = 0;
-  data[1] = cmd0;
-  HAL_I2C_Master_Transmit(i2c, OLED_I2C_ADDR, data, 2, 1);
+template<size_t N>
+void oled_driver::i2c_transmit(const std::array<uint8_t, N> &data, uint32_t timeout) {
+  HAL_I2C_Master_Transmit(_pin_def.i2c, OLED_I2C_ADDR, (uint8_t *)data.data(), N, timeout);
 }
 
-void oled_command_2(I2C_HandleTypeDef *i2c, uint8_t cmd0, uint8_t cmd1) {
-  uint8_t data[3];
-  data[0] = 0;
-  data[1] = cmd0;
-  data[2] = cmd1;
-  HAL_I2C_Master_Transmit(i2c, OLED_I2C_ADDR, data, 3, 1);
-}
-
-void oled_command_3(I2C_HandleTypeDef *i2c, uint8_t cmd0, uint8_t cmd1, uint8_t cmd2) {
-  uint8_t data[4];
-  data[0] = 0;
-  data[1] = cmd0;
-  data[2] = cmd1;
-  data[3] = cmd2;
-  HAL_I2C_Master_Transmit(i2c, OLED_I2C_ADDR, data, 4, 1);
-}
-
-void oled_clear(I2C_HandleTypeDef *i2c) {
-  uint8_t data[129];
+void oled_driver::clear() {
+  std::array<uint8_t, 129> data;
   data[0] = 0x40;
-  for (int i = 1; i < 129; i++)
-    data[i] = 0;
+  std::fill(data.begin() + 1, data.end(), 0);
 
-  for(int i=0; i<8; i++)
-	{
-    oled_command_3(i2c, 0xb0 + i, 0x00, 0x10); // set address
-    HAL_I2C_Master_Transmit(i2c, OLED_I2C_ADDR, data, 129, 10);
+  page_addressing_mode();
+  for(uint8_t i=0; i<8; i++) {
+    set_pos(0, i);
+    i2c_transmit(data, 10);
 	}
 }
 
-void oled_test_seq(I2C_HandleTypeDef *i2c) {
-  oled_command_2(i2c, 0x20, 0x00); // horizontal addressing mode
-  oled_command_3(i2c, 0x22, 0, 7); // set page start/end
-  uint8_t data[2];
+void oled_driver::test_seq() {
+  i2c_transmit(std::array<uint8_t, 6>({0,
+    0x20, 0x00,  // horizontal addressing mode
+    0x22, 0, 7,  // set page start/end
+  }));
+
+  std::array<uint8_t, 2> data;
   data[0] = 0x40;
   for (int m = 0; m < 2; m++) {
     if (m == 0)
@@ -149,85 +132,90 @@ void oled_test_seq(I2C_HandleTypeDef *i2c) {
     for(int i=0; i<8; i++)
     {
       for(int j=1; j<129; j++) {
-        HAL_I2C_Master_Transmit(i2c, OLED_I2C_ADDR, data, 2, 1);
+        i2c_transmit(data);
         HAL_Delay(2);
       }
     }
   }
 }
 
-void oled_init(struct oled_handle *handle) {
-  HAL_GPIO_WritePin(handle->rst_port, handle->rst_pin, GPIO_PIN_RESET);
+void oled_driver::init() {
+  HAL_GPIO_WritePin(_pin_def.rst_port, _pin_def.rst_pin, GPIO_PIN_RESET);
   HAL_Delay(1);
-  HAL_GPIO_WritePin(handle->pwr_port, handle->pwr_pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(_pin_def.pwr_port, _pin_def.pwr_pin, GPIO_PIN_SET);
   HAL_Delay(100);
-  HAL_GPIO_WritePin(handle->rst_port, handle->rst_pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(_pin_def.rst_port, _pin_def.rst_pin, GPIO_PIN_SET);
   delay_us(5);
 
-  oled_clear(handle->i2c);
+  clear();
 
-  uint8_t cmd[] = {
+  std::array<uint8_t, 6> cmd = {
     0x00,
     0xA1, 0xC8,  // rotate display 180 degrees
     0x8D, 0x14,  // enable charge pump
     0xAF,        // display on
   };
-  HAL_I2C_Master_Transmit(handle->i2c, OLED_I2C_ADDR, cmd, sizeof(cmd), 1);
+  i2c_transmit(cmd);
 }
 
-void oled_set_pos(I2C_HandleTypeDef *i2c, uint8_t x, uint8_t y) {
-  oled_command_3(i2c, 0xb0 + y, x & 0xf, 0x10 | (x >> 4));
+void oled_driver::page_addressing_mode() {
+  i2c_transmit(std::array<uint8_t, 3>{0x00, 0x20, 0b10});
 }
 
-void oled_text_mode_init(struct oled_text_mode *txt, struct oled_handle *handle) {
-  txt->i2c = handle->i2c;
-  txt->x = 0;
-  txt->y = 0;
-  oled_command_2(txt->i2c, 0x20, 0b10);  // Page Addressing Mode
-  oled_set_pos(txt->i2c, txt->x, txt->y);
+void oled_driver::set_pos(uint8_t x, uint8_t y) {
+  i2c_transmit(std::array<uint8_t, 4>{
+    0x00,
+    static_cast<uint8_t>(0xb0 + y),
+    static_cast<uint8_t>(x & 0xf),
+    static_cast<uint8_t>(0x10 | (x >> 4))
+  });
 }
 
-void oled_write_string(struct oled_text_mode *txt, const char *str) {
-  while (*str) {
-    if (*str == '\n') {
-      txt->x = 0;
-      txt->y++;
-      if (txt->y > 7)
-        txt->y = 0;
-      oled_set_pos(txt->i2c, txt->x, txt->y);
-    } else if (*str == '\r') {
-      txt->x = 0;
-      oled_set_pos(txt->i2c, txt->x, txt->y);
-    } else if (*str == '\t') {
-      txt->x = txt->x + 4*6 - txt->x % (4*6);
-      if (txt->x > 120) {
-        txt->x = 0;
-        txt->y++;
-        if (txt->y > 7)
-          txt->y = 0;
+oled_text_mode::oled_text_mode(oled_driver &oled): x(0), y(0), oled(oled) {
+  oled.page_addressing_mode();
+  oled.set_pos(0, 0);
+}
+
+void oled_text_mode::write_string(std::string_view str_view) {
+  for (char c : str_view) {
+    if (c == '\n') {
+      this->x = 0;
+      this->y++;
+      if (this->y > 7)
+        this->y = 0;
+      oled.set_pos(this->x, this->y);
+    } else if (c == '\r') {
+      this->x = 0;
+      oled.set_pos(this->x, this->y);
+    } else if (c == '\t') {
+      this->x = this->x + 4*6 - this->x % (4*6);
+      if (this->x > 120) {
+        this->x = 0;
+        this->y++;
+        if (this->y > 7)
+          this->y = 0;
       }
-      oled_set_pos(txt->i2c, txt->x, txt->y);
+      oled.set_pos(this->x, this->y);
     } else {
-      uint8_t data[7];
+      std::array<uint8_t, 7> data;
       data[0] = 0x40;
-      if (*str >= ' ' && *str <= '~') {
+      if (c >= ' ' && c <= '~') {
         for (int i = 0; i < 6; i++)
-          data[i + 1] = font6x8[*str - ' '][i];
+          data[i + 1] = font6x8[c - ' '][i];
       } else {
         for (int i = 0; i < 6; i++)
           data[i + 1] = ~font6x8['?' - ' '][i];
       }
-      HAL_I2C_Master_Transmit(txt->i2c, OLED_I2C_ADDR, data, 7, 1);
-      txt->x += 6;
-      if (txt->x > 120) {
-        txt->x = 0;
-        txt->y++;
-        if (txt->y > 7) {
-          txt->y = 0;
+      oled.i2c_transmit(data);
+      this->x += 6;
+      if (this->x > 120) {
+        this->x = 0;
+        this->y++;
+        if (this->y > 7) {
+          this->y = 0;
         }
-        oled_set_pos(txt->i2c, txt->x, txt->y);
+        oled.set_pos(this->x, this->y);
       }
     }
-    str++;
   }
 }
