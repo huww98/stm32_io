@@ -1,8 +1,7 @@
 #include "oled.h"
 #include "utils.h"
 
-constexpr uint8_t OLED_I2C_ADDR = 0b111100 << 1;
-constexpr uint8_t font6x8[][6] =
+constexpr std::array<uint8_t, 6> font6x8[] =
 {
 {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},// sp
 {0x00, 0x00, 0x00, 0x2f, 0x00, 0x00},// !
@@ -98,9 +97,8 @@ constexpr uint8_t font6x8[][6] =
 {0x14, 0x14, 0x14, 0x14, 0x14, 0x14},// horiz lines
 };
 
-template<size_t N>
-void oled_driver::i2c_transmit(const std::array<uint8_t, N> &data, uint32_t timeout) {
-  HAL_I2C_Master_Transmit(_pin_def.i2c, OLED_I2C_ADDR, (uint8_t *)data.data(), N, timeout);
+const std::array<uint8_t, 6> &get_font(char c) {
+  return font6x8[c - ' '];
 }
 
 void oled_driver::clear() {
@@ -201,10 +199,10 @@ void oled_text_mode::write_string(std::string_view str_view) {
       data[0] = 0x40;
       if (c >= ' ' && c <= '~') {
         for (int i = 0; i < 6; i++)
-          data[i + 1] = font6x8[c - ' '][i];
+          data[i + 1] = get_font(c)[i];
       } else {
         for (int i = 0; i < 6; i++)
-          data[i + 1] = ~font6x8['?' - ' '][i];
+          data[i + 1] = ~get_font('?')[i];
       }
       oled.i2c_transmit(data);
       this->x += 6;
