@@ -1,5 +1,5 @@
 #include "oled.h"
-#include "stm32f1xx_hal_i2c.h"
+#include "utils.h"
 
 #define OLED_I2C_ADDR (0b111100 << 1)
 const uint8_t font6x8[][6] =
@@ -162,7 +162,7 @@ void oled_init(struct oled_handle *handle) {
   HAL_GPIO_WritePin(handle->pwr_port, handle->pwr_pin, GPIO_PIN_SET);
   HAL_Delay(100);
   HAL_GPIO_WritePin(handle->rst_port, handle->rst_pin, GPIO_PIN_SET);
-  HAL_Delay(1);
+  delay_us(5);
 
   oled_clear(handle->i2c);
 

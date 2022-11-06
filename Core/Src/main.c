@@ -22,6 +22,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "oled.h"
+#include "utils.h"
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -99,17 +101,31 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  HAL_Delay(1000);
   oled_init(&oled);
   struct oled_text_mode txt;
   oled_text_mode_init(&txt, &oled);
   oled_write_string(&txt, "Hello World!\n");
-  oled_write_string(&txt, "This is a very loooooong line of text.\n");
-  oled_write_string(&txt, "\ta\nt\ta\nta\ta\ntab\ta\n");
+  // oled_write_string(&txt, "This is a very loooooong line of text.\n");
+  // oled_write_string(&txt, "\ta\nt\ta\nta\ta\ntab\ta\n");
+  char str[24];
+  uint32_t ticks[6];
+
+  delay_us(400);
+  for (uint8_t i = 0; i < 6; i++) {
+    delay_us(0);
+    ticks[i] = SysTick->VAL;
+  }
+  for (uint8_t i = 0; i < 6; i++) {
+    sprintf(str, "\t%lu\n", ticks[i]);
+    oled_write_string(&txt, str);
+  }
+
   while (1)
   {
+    delay_us(1000000);
+    HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
     // oled_test_seq(oled.i2c);
-    __WFI();
+    // __WFI();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
