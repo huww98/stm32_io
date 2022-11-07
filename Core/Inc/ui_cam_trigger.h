@@ -14,5 +14,4 @@ class ui_cam_trigger {
     void draw_title();
     void draw_cam(int pos, int order, bool selected);
     void draw();
-
 };
