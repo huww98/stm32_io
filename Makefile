@@ -40,7 +40,6 @@ Core/Src/main.c \
 Core/Src/stm32f1xx_it.c \
 Core/Src/stm32f1xx_hal_msp.c \
 Core/Src/utils.c \
-Core/Src/74hc595.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio_ex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_i2c.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.c \
@@ -61,6 +60,7 @@ CXX_SOURCES =  \
 Core/Src/main_loop.cpp \
 Core/Src/drivers.cpp \
 Core/Src/button.cpp \
+Core/Src/74hc595.cpp \
 Core/Src/oled.cpp \
 Core/Src/ui_cam_trigger.cpp
 

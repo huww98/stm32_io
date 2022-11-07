@@ -22,7 +22,6 @@
 #include "stm32f1xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "74hc595.h"
 #include "int_handlers.h"
 /* USER CODE END Includes */
 
@@ -218,13 +217,5 @@ void EXTI15_10_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-struct r74hc595_handler shutter_trigger_handler = {
-  .ser_port = SER_GPIO_Port,
-  .ser_pin = SER_Pin,
-  .rck_port = RCK_GPIO_Port,
-  .rck_pin = RCK_Pin,
-  .sck_port = SCK_GPIO_Port,
-  .sck_pin = SCK_Pin,
-  .delay = 128,
-};
+
 /* USER CODE END 1 */

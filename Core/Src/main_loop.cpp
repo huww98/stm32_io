@@ -1,5 +1,6 @@
 #include "drivers.h"
 #include "oled.h"
+#include "74hc595.h"
 #include "ui_cam_trigger.h"
 #include "utils.h"
 #include <cstdio>
@@ -10,6 +11,15 @@ oled_driver oled({
     .rst_port = OLED_RE__GPIO_Port,
     .rst_pin = OLED_RE__Pin,
     .i2c = &hi2c1,
+});
+
+r74hc595_driver shutter_trigger({
+  .ser_port = SER_GPIO_Port,
+  .ser_pin = SER_Pin,
+  .rck_port = RCK_GPIO_Port,
+  .rck_pin = RCK_Pin,
+  .sck_port = SCK_GPIO_Port,
+  .sck_pin = SCK_Pin,
 });
 
 extern "C" {
