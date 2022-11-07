@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "74hc595.h"
+#include "int_handlers.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -212,21 +213,11 @@ void EXTI15_10_IRQHandler(void)
   HAL_GPIO_EXTI_IRQHandler(BTN1_Pin);
   HAL_GPIO_EXTI_IRQHandler(BTN0_Pin);
   /* USER CODE BEGIN EXTI15_10_IRQn 1 */
-
+  btn_interrupt_handler();
   /* USER CODE END EXTI15_10_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
-void handle_btn(GPIO_TypeDef *btn_port, uint16_t btn_pin, GPIO_TypeDef *led_port, uint16_t led_pin) {
-  if (HAL_GPIO_ReadPin(btn_port, btn_pin) == GPIO_PIN_RESET) {
-    HAL_GPIO_WritePin(led_port, led_pin, GPIO_PIN_RESET);
-    while (HAL_GPIO_ReadPin(btn_port, btn_pin) == GPIO_PIN_RESET); // wait for button release
-    HAL_GPIO_WritePin(led_port, led_pin, GPIO_PIN_SET);
-  } else {
-    HAL_GPIO_WritePin(led_port, led_pin, GPIO_PIN_SET);
-  }
-}
-
 struct r74hc595_handler shutter_trigger_handler = {
   .ser_port = SER_GPIO_Port,
   .ser_pin = SER_Pin,
@@ -236,25 +227,4 @@ struct r74hc595_handler shutter_trigger_handler = {
   .sck_pin = SCK_Pin,
   .delay = 128,
 };
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-  static uint8_t data = 0;
-  static uint8_t visual = 0;
-  switch (GPIO_Pin) {
-    case BTN1_Pin:
-      data <<= 1;
-      visual++;
-      if (data == 0) {
-        data = 1;
-        visual = 0;
-      }
-      r74hc595_write(&shutter_trigger_handler, &data, 1);
-
-      HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, ((visual >> 0) & 1) ? GPIO_PIN_RESET : GPIO_PIN_SET);
-      HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, ((visual >> 1) & 1) ? GPIO_PIN_RESET : GPIO_PIN_SET);
-      HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, ((visual >> 2) & 1) ? GPIO_PIN_RESET : GPIO_PIN_SET);
-      break;
-  }
-}
-
 /* USER CODE END 1 */

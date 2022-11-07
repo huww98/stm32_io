@@ -20,7 +20,9 @@ void ui_cam_trigger::draw_title() {
     oled.i2c_transmit(title, 10);
 }
 
-void ui_cam_trigger::draw_cam(int pos, int order, bool selected) {
+void ui_cam_trigger::draw_cam(int pos, int order) {
+    bool selected = this->selected == pos;
+
     std::array<uint8_t, 17> top = {0x40};
     std::array<uint8_t, 17> bottom = {0x40};
 
@@ -78,6 +80,21 @@ void ui_cam_trigger::draw() {
     draw_title();
 
     for (int i = 0; i < 24; i++) {
-        draw_cam(i, i % 2 == 0 ? i : -1, this->selected == i);
+        draw_cam(i, i % 2 == 0 ? i : -1);
+    }
+}
+
+void ui_cam_trigger::handle_button(uint8_t button, button_event event) {
+    if (event == button_event::press) {
+        if (button == 0 || button == 2) {
+            auto last_selected = selected;
+            if (button == 2) {
+                this->selected = (this->selected + 1) % 24;
+            } else if (button == 0) {
+                this->selected = (this->selected + 23) % 24;
+            }
+            this->draw_cam(last_selected, last_selected % 2 == 0 ? last_selected : -1);
+            this->draw_cam(selected, selected % 2 == 0 ? selected : -1);
+        }
     }
 }

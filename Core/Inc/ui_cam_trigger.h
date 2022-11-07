@@ -1,6 +1,7 @@
 #pragma once
 
 #include "oled.h"
+#include "button.h"
 
 class ui_cam_trigger {
   private:
@@ -12,6 +13,8 @@ class ui_cam_trigger {
 
     ui_cam_trigger(oled_driver &oled) : oled(oled) {}
     void draw_title();
-    void draw_cam(int pos, int order, bool selected);
+    void draw_cam(int pos, int order);
     void draw();
+
+    void handle_button(uint8_t button, button_event event);
 };
