@@ -48,9 +48,8 @@ I2C_HandleTypeDef hi2c1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
-void main_loop(void);
 /* USER CODE BEGIN PFP */
-
+void main_loop(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -234,7 +233,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : BTN3_Pin BTN2_Pin BTN1_Pin BTN0_Pin */
   GPIO_InitStruct.Pin = BTN3_Pin|BTN2_Pin|BTN1_Pin|BTN0_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
