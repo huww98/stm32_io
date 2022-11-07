@@ -1,5 +1,19 @@
 #include "ui_cam_trigger.h"
 
+void ui_cam_trigger::update_order() {
+    for (size_t i = 0; i < order.size(); i++) {
+        if (shutter_delay[i] == static_cast<uint16_t>(-1)) {
+            order[i] = 0;
+        } else {
+            order[i] = 1;
+            for (size_t j = 0; j < order.size(); j++) {
+                if (shutter_delay[j] < shutter_delay[i])
+                    order[i]++;
+            }
+        }
+    }
+}
+
 void ui_cam_trigger::draw_title() {
     static constexpr auto title_padding_left = (128 - 6 * title_txt.size()) / 2;
     static constexpr auto title_padding_right = (128 - 6 * title_txt.size() - title_padding_left);
@@ -20,8 +34,9 @@ void ui_cam_trigger::draw_title() {
     oled.i2c_transmit(title, 10);
 }
 
-void ui_cam_trigger::draw_cam(int pos, int order) {
+void ui_cam_trigger::draw_cam(int pos) {
     bool selected = this->selected == pos;
+    auto order = this->order[pos];
 
     std::array<uint8_t, 17> top = {0x40};
     std::array<uint8_t, 17> bottom = {0x40};
@@ -34,8 +49,7 @@ void ui_cam_trigger::draw_cam(int pos, int order) {
         }
     };
 
-    if (order >= 0) {
-        order += 1;
+    if (order > 0) {
         if (order <= 9) {
             std::fill(top.begin() + 3, top.begin() + 6, 0b11111100);
             std::fill(bottom.begin() + 3, bottom.begin() + 6, 0b00111111);
@@ -67,7 +81,7 @@ void ui_cam_trigger::draw_cam(int pos, int order) {
     }
 
     uint8_t x = (pos % 8) * 16;
-    uint8_t y = 6 - (pos / 8) * 2;
+    uint8_t y = (pos / 8) * 2 + 1;
     oled.set_pos(x, y);
     oled.i2c_transmit(top, 10);
     oled.set_pos(x, y + 1);
@@ -80,7 +94,7 @@ void ui_cam_trigger::draw() {
     draw_title();
 
     for (int i = 0; i < 24; i++) {
-        draw_cam(i, i % 2 == 0 ? i : -1);
+        draw_cam(i);
     }
 }
 
@@ -93,8 +107,16 @@ void ui_cam_trigger::handle_button(uint8_t button, button_event event) {
             } else if (button == 0) {
                 this->selected = (this->selected + 23) % 24;
             }
-            this->draw_cam(last_selected, last_selected % 2 == 0 ? last_selected : -1);
-            this->draw_cam(selected, selected % 2 == 0 ? selected : -1);
+            this->draw_cam(last_selected);
+            this->draw_cam(selected);
+        } else if (button == 1) {
+            if (shutter_delay[selected] == static_cast<uint16_t>(-1)) {
+                shutter_delay[selected] = 0;
+            } else {
+                shutter_delay[selected] = static_cast<uint16_t>(-1);
+            }
+            update_order();
+            this->draw_cam(selected);
         }
     }
 }

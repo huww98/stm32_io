@@ -21,7 +21,7 @@ class button_driver {
     uint32_t _transit_tick = 0;
 
   public:
-    static constexpr uint32_t DEBOUNCE_TIME = 10;
+    static constexpr uint32_t DEBOUNCE_TIME = 30;
     button_driver(button_pin_def &&pin_def) : _pin_def(pin_def){};
     const button_pin_def &pin_def() const { return _pin_def; };
 

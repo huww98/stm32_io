@@ -26,7 +26,7 @@ extern "C" {
 void main_loop() {
     oled.init();
 
-    ui_cam_trigger ui(oled);
+    ui_cam_trigger ui(oled, shutter_trigger);
     ui.draw();
 
     // oled_text_mode txt(oled);
