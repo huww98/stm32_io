@@ -14,10 +14,10 @@ class r74hc595_driver {
     uint16_t delay;
 
     public:
-        r74hc595_driver(r74hc595_pin_def &&pin_def, uint16_t delay = 1) : _pin_def(pin_def), delay(delay) {};
+        r74hc595_driver(r74hc595_pin_def &&pin_def, uint16_t delay = 128) : _pin_def(pin_def), delay(delay) {};
         template<size_t N>
         void write(const std::array<uint8_t, N> &data) {
             write(data.data(), data.size());
         }
-        void write(uint8_t *data, size_t size);
+        void write(const uint8_t *data, size_t size);
 };

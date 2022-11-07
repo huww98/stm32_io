@@ -81,7 +81,7 @@ void ui_cam_trigger::draw_cam(int pos) {
     }
 
     uint8_t x = (pos % 8) * 16;
-    uint8_t y = (pos / 8) * 2 + 1;
+    uint8_t y = (pos / 8) * 2 + 2;
     oled.set_pos(x, y);
     oled.i2c_transmit(top, 10);
     oled.set_pos(x, y + 1);
@@ -110,6 +110,7 @@ void ui_cam_trigger::handle_button(uint8_t button, button_event event) {
             this->draw_cam(last_selected);
             this->draw_cam(selected);
         } else if (button == 1) {
+            //FIXME: Just to test the hardware
             if (shutter_delay[selected] == static_cast<uint16_t>(-1)) {
                 shutter_delay[selected] = 0;
             } else {
@@ -117,6 +118,15 @@ void ui_cam_trigger::handle_button(uint8_t button, button_event event) {
             }
             update_order();
             this->draw_cam(selected);
+
+            std::array<uint8_t, 3> data;
+            for (int i = 0; i < 3; i++) {
+                for (int j = 7; j >= 0; j--) {
+                    data[i] <<= 1;
+                    data[i] |= shutter_delay[i * 8 + j] == static_cast<uint16_t>(-1);
+                }
+            }
+            this->shutter_trigger.write(data);
         }
     }
 }

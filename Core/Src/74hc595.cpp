@@ -6,7 +6,7 @@ static void r74hc595_delay(uint16_t delay) {
     }
 }
 
-void r74hc595_driver::write(uint8_t *data, size_t len) {
+void r74hc595_driver::write(const uint8_t *data, size_t len) {
     for (size_t i = 0; i < len; i++) {
         for (uint8_t j = 0; j < 8; j++) {
             HAL_GPIO_WritePin(_pin_def.sck_port, _pin_def.sck_pin, GPIO_PIN_RESET);
