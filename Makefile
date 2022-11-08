@@ -62,7 +62,8 @@ Core/Src/drivers.cpp \
 Core/Src/button.cpp \
 Core/Src/74hc595.cpp \
 Core/Src/oled.cpp \
-Core/Src/ui_cam_trigger.cpp
+Core/Src/ui_cam_trigger.cpp \
+build/fonts.cpp
 
 # ASM sources
 ASM_SOURCES =  \
@@ -88,6 +89,7 @@ SZ = $(PREFIX)size
 endif
 HEX = $(CP) -O ihex
 BIN = $(CP) -O binary -S
+PYTHON = python3
 
 #######################################
 # CFLAGS
@@ -130,7 +132,6 @@ C_INCLUDES =  \
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 
 CFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
-CXXFLAGS += $(CFLAGS) -fno-rtti -std=c++20
 
 ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2
@@ -140,6 +141,7 @@ endif
 # Generate dependency information
 CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
 
+CXXFLAGS += $(CFLAGS) -fno-rtti -std=c++20
 
 #######################################
 # LDFLAGS
@@ -159,6 +161,10 @@ all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET
 #######################################
 # build the application
 #######################################
+# generate fonts
+build/fonts.cpp: fonts/*.bdf fonts/make_fonts.py
+	$(PYTHON) fonts/make_fonts.py > $@
+
 # list of objects
 OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SOURCES:.c=.o)))
 vpath %.c $(sort $(dir $(C_SOURCES)))
