@@ -4,14 +4,14 @@
 
 void ui_individual_delay::update_order() {
     for (size_t i = 0; i < order.size(); i++) {
-        if (!enabled[i]) {
+        if (!timing.enabled[i]) {
             order[i] = 0;
         } else {
             order[i] = 1;
             for (size_t j = 0; j < order.size(); j++) {
-                if (!enabled[j])
+                if (!timing.enabled[j])
                     continue;
-                if (shutter_delay[j] < shutter_delay[i])
+                if (timing.shutter_delay[j] < timing.shutter_delay[i])
                     order[i]++;
             }
         }
@@ -102,53 +102,6 @@ void ui_individual_delay::handle_button(uint8_t button, button_event event, uint
     }
 }
 
-constexpr uint32_t CONFIG_ADDR = 0x0800f800;
-constexpr uint16_t CONFIG_MAGIC = 0x1234;
-
-void ui_individual_delay::save_config() {
-    HAL_FLASH_Unlock();
-    FLASH_EraseInitTypeDef erase {
-        .TypeErase = FLASH_TYPEERASE_PAGES,
-        .Banks = FLASH_BANK_1,
-        .PageAddress = CONFIG_ADDR,
-        .NbPages = 1,
-    };
-    uint32_t page_error;
-    HAL_FLASHEx_Erase(&erase, &page_error);
-    assert(page_error == 0xffffffff);
-
-    auto next_config_addr = CONFIG_ADDR;
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, next_config_addr, CONFIG_MAGIC);
-    next_config_addr += 2;
-
-    for (int i = 0; i < 24; i++) {
-        HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, next_config_addr, shutter_delay[i]);
-        next_config_addr += 2;
-    }
-    uint32_t enabled_packed = 0;
-    for (int i = 0; i < 24; i++) {
-        enabled_packed |= (uint32_t)enabled[i] << i;
-    }
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, next_config_addr, enabled_packed);
-    next_config_addr += 4;
-    assert(next_config_addr <= CONFIG_ADDR + 0x400);
-    HAL_FLASH_Lock();
-}
-
-void ui_individual_delay::read_config() {
-    if (*(uint16_t *)CONFIG_ADDR != CONFIG_MAGIC)
-        return;
-    auto next_config_addr = CONFIG_ADDR + 2;
-    for (int i = 0; i < 24; i++) {
-        shutter_delay[i] = *(uint16_t *)next_config_addr;
-        next_config_addr += 2;
-    }
-    uint32_t enabled_packed = *(uint32_t *)next_config_addr;
-    for (int i = 0; i < 24; i++) {
-        enabled[i] = enabled_packed & (1 << i);
-    }
-}
-
 namespace {
 void draw_OFF(oled_driver &oled) {
     constexpr std::string_view OFF = "OFF";
@@ -209,7 +162,7 @@ void ui_set_delay::draw() {
     oled.clear(1);
     oled.vertical_addressing_mode();
 
-    if (enabled[selected])
+    if (timing.enabled[selected])
         _time_input.draw();
     else
         draw_OFF(oled);
@@ -279,7 +232,7 @@ void ui_set_time::handle_button(uint8_t button, button_event event, uint32_t tic
     if (event == button_event::press) {
         if (button == 3) {
             oled.addressing_range();
-            _dirty |= _time_input.time != this->time;
+            dirty |= _time_input.time != this->time;
             this->time = _time_input.time;
             pm.pop();
             return;
@@ -296,14 +249,14 @@ void ui_set_delay::handle_button(uint8_t button, button_event event, uint32_t ti
     if (event == button_event::press) {
         if (button == 3) {
             oled.addressing_range();
-            _dirty |= _time_input.time != shutter_delay[selected];
-            shutter_delay[selected] = _time_input.time;
+            timing.dirty |= _time_input.time != timing.shutter_delay[selected];
+            timing.shutter_delay[selected] = _time_input.time;
             pm.pop();
-        } else if (!enabled[selected]) {
-            enabled[selected] = true;
+        } else if (!timing.enabled[selected]) {
+            timing.enabled[selected] = true;
             _time_input.draw();
         } else if (button == 1) {
-            enabled[selected] = false;
+            timing.enabled[selected] = false;
             oled.addressing_range();
             oled.clear(2, 6);
             oled.vertical_addressing_mode();

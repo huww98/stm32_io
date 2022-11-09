@@ -57,6 +57,7 @@ Core/Src/system_stm32f1xx.c
 
 CXX_SOURCES =  \
 Core/Src/utils.cpp \
+Core/Src/timing.cpp \
 Core/Src/main_loop.cpp \
 Core/Src/drivers.cpp \
 Core/Src/button.cpp \

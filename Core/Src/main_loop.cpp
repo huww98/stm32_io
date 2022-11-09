@@ -1,6 +1,7 @@
 #include "drivers.h"
 #include "oled.h"
 #include "74hc595.h"
+#include "timing.h"
 #include "ui_set_time.h"
 #include "ui_menu.h"
 #include "utils.h"
@@ -45,9 +46,13 @@ void test_mode() {
     }
 }
 
-ui_individual_delay ui_i_delay(oled, shutter_trigger);
-ui_set_time ui_base_delay(oled, "BASE DELAY");
-ui_set_time ui_focus_advance(oled, "FOCUS ADVANCE");
+timing_t shutter_timing;
+
+toast_t toast(oled);
+
+ui_individual_delay ui_i_delay(oled, shutter_trigger, shutter_timing);
+ui_set_time ui_base_delay(oled, "BASE DELAY", shutter_timing.base_delay, shutter_timing.dirty);
+ui_set_time ui_focus_advance(oled, "FOCUS ADVANCE", shutter_timing.focus_advance, shutter_timing.dirty);
 
 std::array<menu_item, 3> settings_menu_items = {
     menu_item{"Display Contrast", []() { }},
@@ -60,7 +65,11 @@ std::array<menu_item, 6> main_menu_items = {
     menu_item{"Individual Delay", []() { pm.push(ui_i_delay); }},
     menu_item{"Base Delay",       []() { pm.push(ui_base_delay); }},
     menu_item{"Focus Advance",    []() { pm.push(ui_focus_advance); }},
-    menu_item{"Save Timming",     []() { }},
+    menu_item{"Save Timming",     []() {
+        toast.show("Saving", -1);
+        shutter_timing.save();
+        toast.reset("Saved");
+    }},
     menu_item{"Trigger!",         []() { }},
     menu_item{"Settings",         []() { pm.push(settings_menu); }},
 };
@@ -68,6 +77,7 @@ ui_menu main_menu(oled, "[CAMERA TRIGGER]", main_menu_items);
 
 extern "C" {
 void main_loop() {
+    shutter_timing.load();
     oled.init();
 
     if (HAL_GPIO_ReadPin(BTN3_GPIO_Port, BTN3_Pin) == GPIO_PIN_RESET)
