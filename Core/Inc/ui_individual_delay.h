@@ -32,7 +32,7 @@ class ui_set_delay : public ui_base {
     virtual void tick(uint32_t tick) override;
 };
 
-class ui_cam_trigger : public ui_base {
+class ui_individual_delay : public ui_base {
   private:
     oled_driver &oled;
     r74hc595_driver &shutter_trigger;
@@ -50,7 +50,7 @@ class ui_cam_trigger : public ui_base {
   public:
     static constexpr std::string_view title_txt = "CAMERA TRIGGER";
 
-    ui_cam_trigger(oled_driver &oled, r74hc595_driver &shutter_trigger)
+    ui_individual_delay(oled_driver &oled, r74hc595_driver &shutter_trigger)
         : oled(oled), shutter_trigger(shutter_trigger), set_delay_page(oled, shutter_delay, enabled) {
 
         read_config();

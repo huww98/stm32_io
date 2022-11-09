@@ -1,7 +1,8 @@
 #include "drivers.h"
 #include "oled.h"
 #include "74hc595.h"
-#include "ui_cam_trigger.h"
+#include "ui_individual_delay.h"
+#include "ui_menu.h"
 #include "utils.h"
 #include <cstdio>
 
@@ -22,45 +23,58 @@ r74hc595_driver shutter_trigger({
   .sck_pin = SCK_Pin,
 });
 
+void test_mode() {
+    oled.test_seq();
+    oled_text_mode txt(oled);
+    txt.write_string("Hello World!\n");
+    // txt.write_string("This is a very loooooong line of text.\n");
+    // txt.write_string("\ta\nt\ta\nta\ta\ntab\ta\n");
+    char str[24];
+    while (1) {
+        auto tick = HAL_GetTick();
+        for (uint8_t i = 0; i < bottons.size(); i++) {
+            auto event = bottons[i].update(tick);
+            if (event != button_event::none) {
+                sprintf(str, "%ld\tButton %d: %d\n", tick, i, int(event));
+                txt.write_string(str);
+            }
+        }
+        // delay_us(1000000);
+        // HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
+        __WFI();
+    }
+}
+
 extern "C" {
 void main_loop() {
     oled.init();
 
-    ui_cam_trigger ui(oled, shutter_trigger);
-    pm.init(ui);
+    if (HAL_GPIO_ReadPin(BTN3_GPIO_Port, BTN3_Pin) == GPIO_PIN_RESET)
+        test_mode();
 
-    // oled_text_mode txt(oled);
-    // txt.write_string("Hello World!\n");
-    // txt.write_string("This is a very loooooong line of text.\n");
-    // txt.write_string("\ta\nt\ta\nta\ta\ntab\ta\n");
-    // char str[24];
-    // uint32_t ticks[6];
+    ui_individual_delay ui_i_delay(oled, shutter_trigger);
 
-    // delay_us(400);
-    // for (uint8_t i = 0; i < 6; i++) {
-    //   delay_us(0);
-    //   ticks[i] = SysTick->VAL;
-    // }
-    // txt.write_string(str);
-    // for (uint8_t i = 0; i < 6; i++) {
-    //   sprintf(str, "\t%lu\n", ticks[i]);
-    //   txt.write_string(str);
-    // }
+    std::array<menu_item, 6> main_menu_items = {
+        menu_item{"Individual Delay", [&]() { pm.push(ui_i_delay); }},
+        menu_item{"Base Delay",       []() { }},
+        menu_item{"Focus Advance",    []() { }},
+        menu_item{"Save Timming",     []() { }},
+        menu_item{"Trigger!",         []() { }},
+        menu_item{"Settings",         []() { }},
+    };
+    ui_menu main_menu(oled, "[CAMERA TRIGGER]", main_menu_items);
+
+    pm.init(main_menu);
 
     while (1) {
         auto tick = HAL_GetTick();
         for (uint8_t i = 0; i < bottons.size(); i++) {
             auto event = bottons[i].update(tick);
             if (event != button_event::none) {
-                // sprintf(str, "%ld\tButton %d: %d\n", tick, i, int(event));
-                // txt.write_string(str);
                 pm.current_page().handle_button(i, event, tick);
             }
         }
         pm.current_page().tick(tick);
-        // delay_us(1000000);
-        // HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
-        // oled_test_seq(oled.i2c);
         __WFI();
     }
 }

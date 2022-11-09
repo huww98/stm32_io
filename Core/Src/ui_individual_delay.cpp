@@ -1,7 +1,7 @@
-#include "ui_cam_trigger.h"
+#include "ui_individual_delay.h"
 #include "fonts.h"
 
-void ui_cam_trigger::update_order() {
+void ui_individual_delay::update_order() {
     for (size_t i = 0; i < order.size(); i++) {
         if (!enabled[i]) {
             order[i] = 0;
@@ -39,7 +39,7 @@ void draw_title(std::string_view title_txt, oled_driver &oled) {
 }
 } // namespace
 
-void ui_cam_trigger::draw_cam(int pos) {
+void ui_individual_delay::draw_cam(int pos) {
     bool selected = this->selected == pos;
     auto order = this->order[pos];
 
@@ -93,7 +93,7 @@ void ui_cam_trigger::draw_cam(int pos) {
     oled.i2c_transmit(bottom, 10);
 }
 
-void ui_cam_trigger::draw() {
+void ui_individual_delay::draw() {
     oled.page_addressing_mode();
     oled.set_pos(0, 0);
     draw_title(title_txt, oled);
@@ -104,7 +104,7 @@ void ui_cam_trigger::draw() {
     }
 }
 
-void ui_cam_trigger::handle_button(uint8_t button, button_event event, uint32_t tick) {
+void ui_individual_delay::handle_button(uint8_t button, button_event event, uint32_t tick) {
     if (event == button_event::press) {
         if (button == 0 || button == 2) {
             auto last_selected = selected;
@@ -128,7 +128,7 @@ void ui_cam_trigger::handle_button(uint8_t button, button_event event, uint32_t 
 constexpr uint32_t CONFIG_ADDR = 0x0800f800;
 constexpr uint16_t CONFIG_MAGIC = 0x1234;
 
-void ui_cam_trigger::save_config() {
+void ui_individual_delay::save_config() {
     HAL_FLASH_Unlock();
     FLASH_EraseInitTypeDef erase = {};
     erase.TypeErase = FLASH_TYPEERASE_PAGES;
@@ -157,7 +157,7 @@ void ui_cam_trigger::save_config() {
     HAL_FLASH_Lock();
 }
 
-void ui_cam_trigger::read_config() {
+void ui_individual_delay::read_config() {
     if (*(uint16_t *)CONFIG_ADDR != CONFIG_MAGIC)
         return;
     auto next_config_addr = CONFIG_ADDR + 2;

@@ -63,7 +63,8 @@ Core/Src/button.cpp \
 Core/Src/74hc595.cpp \
 Core/Src/oled.cpp \
 Core/Src/ui_base.cpp \
-Core/Src/ui_cam_trigger.cpp \
+Core/Src/ui_menu.cpp \
+Core/Src/ui_individual_delay.cpp \
 build/fonts.cpp
 
 # ASM sources
