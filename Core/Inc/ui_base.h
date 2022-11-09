@@ -35,9 +35,10 @@ class page_manager {
     }
 
     void pop() {
-        assert(stack_ptr > 0);
-        _current_page = page_stack[--stack_ptr];
-        _current_page->draw();
+        if (stack_ptr > 0) {
+            _current_page = page_stack[--stack_ptr];
+            _current_page->draw();
+        }
     }
 
     ui_base &current_page() const { return *_current_page; }

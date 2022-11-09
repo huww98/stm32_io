@@ -40,9 +40,13 @@ void ui_menu::draw_item(uint8_t index) {
 void ui_menu::draw() {
     oled.page_addressing_mode();
     put_string_center(oled, title, 0);
+    oled.clear(1, 2);
 
     for (uint8_t i = 0; i < menu_items_count; i++)
         draw_item(i);
+
+    if (menu_items_count < 6)
+        oled.clear(menu_items_count + 2);
 }
 
 void ui_menu::handle_button(uint8_t button, button_event event, uint32_t tick) {
@@ -61,6 +65,8 @@ void ui_menu::handle_button(uint8_t button, button_event event, uint32_t tick) {
             }
         } else if (button == 1) {
             menu_items[selected].action();
+        } else if (button == 3) {
+            pm.pop();
         }
     }
 }

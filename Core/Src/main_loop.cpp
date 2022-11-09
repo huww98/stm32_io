@@ -45,26 +45,33 @@ void test_mode() {
     }
 }
 
+ui_individual_delay ui_i_delay(oled, shutter_trigger);
+ui_set_time ui_base_delay(oled, "BASE DELAY");
+ui_set_time ui_focus_advance(oled, "FOCUS ADVANCE");
+
+std::array<menu_item, 3> settings_menu_items = {
+    menu_item{"Display Contrast", []() { }},
+    menu_item{"Reset",            []() { }},
+    menu_item{"About",            []() { }},
+};
+ui_menu settings_menu(oled, "[SETTINGS]", settings_menu_items);
+
+std::array<menu_item, 6> main_menu_items = {
+    menu_item{"Individual Delay", []() { pm.push(ui_i_delay); }},
+    menu_item{"Base Delay",       []() { pm.push(ui_base_delay); }},
+    menu_item{"Focus Advance",    []() { pm.push(ui_focus_advance); }},
+    menu_item{"Save Timming",     []() { }},
+    menu_item{"Trigger!",         []() { }},
+    menu_item{"Settings",         []() { pm.push(settings_menu); }},
+};
+ui_menu main_menu(oled, "[CAMERA TRIGGER]", main_menu_items);
+
 extern "C" {
 void main_loop() {
     oled.init();
 
     if (HAL_GPIO_ReadPin(BTN3_GPIO_Port, BTN3_Pin) == GPIO_PIN_RESET)
         test_mode();
-
-    ui_individual_delay ui_i_delay(oled, shutter_trigger);
-    ui_set_time ui_base_delay(oled, "BASE DELAY");
-    ui_set_time ui_focus_advance(oled, "FOCUS ADVANCE");
-
-    std::array<menu_item, 6> main_menu_items = {
-        menu_item{"Individual Delay", [&]() { pm.push(ui_i_delay); }},
-        menu_item{"Base Delay",       [&]() { pm.push(ui_base_delay); }},
-        menu_item{"Focus Advance",    [&]() { pm.push(ui_focus_advance); }},
-        menu_item{"Save Timming",     []() { }},
-        menu_item{"Trigger!",         []() { }},
-        menu_item{"Settings",         []() { }},
-    };
-    ui_menu main_menu(oled, "[CAMERA TRIGGER]", main_menu_items);
 
     pm.init(main_menu);
 
