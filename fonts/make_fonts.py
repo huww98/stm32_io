@@ -4,7 +4,7 @@ import numpy as np
 def main():
     print('#include <array>')
     print('#include <cstdint>')
-    print('std::array<uint8_t, 64> font_ter_u32b[] = {')
+    print('extern const std::array<uint8_t, 64> font_ter_u32b[] = {')
 
     face = Face('fonts/ter-u32b.bdf')
     face.set_pixel_sizes(width=0, height=32)
