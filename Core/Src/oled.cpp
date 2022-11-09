@@ -93,18 +93,17 @@ constexpr std::array<uint8_t, 6> font6x8[] = {
     {0x00, 0x44, 0x28, 0x10, 0x28, 0x44}, // x
     {0x00, 0x1C, 0xA0, 0xA0, 0xA0, 0x7C}, // y
     {0x00, 0x44, 0x64, 0x54, 0x4C, 0x44}, // z
-    {0x14, 0x14, 0x14, 0x14, 0x14, 0x14}, // horiz lines
 };
 
-const std::array<uint8_t, 6> &get_font(char c) { return font6x8[c - ' ']; }
+const std::array<uint8_t, 6> &get_font6x8(char c) { return font6x8[c - ' ']; }
 
-void oled_driver::clear() {
+void oled_driver::clear(uint8_t begin_page, uint8_t end_page) {
     std::array<uint8_t, 129> data;
     data[0] = 0x40;
     std::fill(data.begin() + 1, data.end(), 0);
 
     page_addressing_mode();
-    for (uint8_t i = 0; i < 8; i++) {
+    for (uint8_t i = begin_page; i < end_page; i++) {
         set_pos(0, i);
         i2c_transmit(data, 10);
     }
@@ -161,6 +160,17 @@ void oled_driver::set_pos(uint8_t x, uint8_t y) {
     });
 }
 
+void oled_driver::vertical_addressing_mode() {
+    i2c_transmit(std::to_array<uint8_t>({0x00, 0x20, 0b01}));
+}
+
+void oled_driver::addressing_range(uint8_t begin_page, uint8_t end_page, uint8_t begin_col, uint8_t end_col) {
+    i2c_transmit(std::to_array<uint8_t>({0x00,
+        0x21, begin_col, end_col,
+        0x22, begin_page, end_page,
+    }));
+}
+
 oled_text_mode::oled_text_mode(oled_driver &oled) : x(0), y(0), oled(oled) {
     oled.page_addressing_mode();
     oled.set_pos(0, 0);
@@ -189,12 +199,12 @@ void oled_text_mode::write_string(std::string_view str_view) {
         } else {
             std::array<uint8_t, 7> data;
             data[0] = 0x40;
-            if (c >= ' ' && c <= '~') {
-                auto &font = get_font(c);
+            if (c >= ' ' && c <= 'z') {
+                auto &font = get_font6x8(c);
                 for (int i = 0; i < 6; i++)
                     data[i + 1] = font[i];
             } else {
-                auto &font = get_font('?');
+                auto &font = get_font6x8('?');
                 for (int i = 0; i < 6; i++)
                     data[i + 1] = ~font[i];
             }

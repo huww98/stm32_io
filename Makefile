@@ -62,6 +62,7 @@ Core/Src/drivers.cpp \
 Core/Src/button.cpp \
 Core/Src/74hc595.cpp \
 Core/Src/oled.cpp \
+Core/Src/ui_base.cpp \
 Core/Src/ui_cam_trigger.cpp \
 build/fonts.cpp
 
@@ -134,14 +135,14 @@ ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffuncti
 CFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 
 ifeq ($(DEBUG), 1)
-CFLAGS += -g -gdwarf-2
+CFLAGS += -g
 endif
 
 
 # Generate dependency information
 CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
 
-CXXFLAGS += $(CFLAGS) -fno-rtti -std=c++20
+CXXFLAGS += $(CFLAGS) -fno-rtti -fno-threadsafe-statics -fno-exceptions -std=c++20
 
 #######################################
 # LDFLAGS
@@ -150,7 +151,7 @@ CXXFLAGS += $(CFLAGS) -fno-rtti -std=c++20
 LDSCRIPT = STM32F103C8Tx_FLASH.ld
 
 # libraries
-LIBS = -lc -lm -lnosys
+LIBS = -lc -lm -lnosys -lstdc++
 LIBDIR =
 LDFLAGS = $(MCU) $(OPT) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 

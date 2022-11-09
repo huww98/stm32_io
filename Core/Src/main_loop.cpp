@@ -27,7 +27,7 @@ void main_loop() {
     oled.init();
 
     ui_cam_trigger ui(oled, shutter_trigger);
-    ui.draw();
+    pm.init(ui);
 
     // oled_text_mode txt(oled);
     // txt.write_string("Hello World!\n");
@@ -48,11 +48,13 @@ void main_loop() {
     // }
 
     while (1) {
-        auto tick = SysTick->VAL;
+        auto tick = HAL_GetTick();
         for (uint8_t i = 0; i < bottons.size(); i++) {
             auto event = bottons[i].update(tick);
             if (event != button_event::none) {
-                ui.handle_button(i, event);
+                // sprintf(str, "%ld\tButton %d: %d\n", tick, i, int(event));
+                // txt.write_string(str);
+                pm.current_page().handle_button(i, event);
             }
         }
         // delay_us(1000000);

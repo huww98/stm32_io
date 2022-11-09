@@ -1,12 +1,15 @@
 #include "ui_cam_trigger.h"
+#include "fonts.h"
 
 void ui_cam_trigger::update_order() {
     for (size_t i = 0; i < order.size(); i++) {
-        if (shutter_delay[i] == static_cast<uint16_t>(-1)) {
+        if (!enabled[i]) {
             order[i] = 0;
         } else {
             order[i] = 1;
             for (size_t j = 0; j < order.size(); j++) {
+                if (!enabled[j])
+                    continue;
                 if (shutter_delay[j] < shutter_delay[i])
                     order[i]++;
             }
@@ -14,9 +17,10 @@ void ui_cam_trigger::update_order() {
     }
 }
 
-void ui_cam_trigger::draw_title() {
-    static constexpr auto title_padding_left = (128 - 6 * title_txt.size()) / 2;
-    static constexpr auto title_padding_right = (128 - 6 * title_txt.size() - title_padding_left);
+namespace {
+void draw_title(std::string_view title_txt, oled_driver &oled) {
+    auto title_padding_left = (128 - 6 * title_txt.size()) / 2;
+    auto title_padding_right = (128 - 6 * title_txt.size() - title_padding_left);
     std::array<uint8_t, 129> title;
     auto it = title.begin();
     *(it++) = 0x40;
@@ -24,7 +28,7 @@ void ui_cam_trigger::draw_title() {
     it += title_padding_left;
 
     for (char c : title_txt) {
-        auto &font = get_font(c);
+        auto &font = get_font6x8(c);
         for (int i = 0; i < 6; i++)
             *(it++) = ~font[i];
     }
@@ -33,6 +37,7 @@ void ui_cam_trigger::draw_title() {
 
     oled.i2c_transmit(title, 10);
 }
+} // namespace
 
 void ui_cam_trigger::draw_cam(int pos) {
     bool selected = this->selected == pos;
@@ -43,7 +48,7 @@ void ui_cam_trigger::draw_cam(int pos) {
 
     auto num_at = [&](int num, int pos) {
         for (int i = 0; i < 6; i++) {
-            uint8_t font = ~get_font('0' + num)[i];
+            uint8_t font = ~get_font6x8('0' + num)[i];
             top[pos + i] = font << 4 | 0b00001100;
             bottom[pos + i] = font >> 4 | 0b00110000;
         }
@@ -91,8 +96,9 @@ void ui_cam_trigger::draw_cam(int pos) {
 void ui_cam_trigger::draw() {
     oled.page_addressing_mode();
     oled.set_pos(0, 0);
-    draw_title();
+    draw_title(title_txt, oled);
 
+    update_order();
     for (int i = 0; i < 24; i++) {
         draw_cam(i);
     }
@@ -110,23 +116,95 @@ void ui_cam_trigger::handle_button(uint8_t button, button_event event) {
             this->draw_cam(last_selected);
             this->draw_cam(selected);
         } else if (button == 1) {
-            //FIXME: Just to test the hardware
-            if (shutter_delay[selected] == static_cast<uint16_t>(-1)) {
-                shutter_delay[selected] = 0;
-            } else {
-                shutter_delay[selected] = static_cast<uint16_t>(-1);
-            }
-            update_order();
-            this->draw_cam(selected);
+            set_delay_page.select(selected);
+            pm.push(set_delay_page);
+        }
+    }
+}
 
-            std::array<uint8_t, 3> data;
-            for (int i = 0; i < 3; i++) {
-                for (int j = 7; j >= 0; j--) {
-                    data[i] <<= 1;
-                    data[i] |= shutter_delay[i * 8 + j] == static_cast<uint16_t>(-1);
-                }
-            }
-            this->shutter_trigger.write(data);
+namespace {
+void draw_OFF(oled_driver &oled) {
+    constexpr std::string_view OFF = "OFF";
+    auto padding_left = (128 - 16 * OFF.size()) / 2;
+
+    oled.addressing_range(2, 5, padding_left);
+
+    std::array<uint8_t, 1 + sizeof(font_ter_u32b[0]) * 3> data;
+    data[0] = 0x40;
+    auto it = data.begin() + 1;
+    for (auto c : OFF) {
+        auto &font = get_font_ter_u32b(c);
+        it = std::copy(font.begin(), font.end(), it);
+    }
+    oled.i2c_transmit(data, 20);
+}
+
+void draw_time(oled_driver &oled, uint16_t time) {
+    constexpr std::string_view UNIT = "ms";
+    constexpr int NUM_DIGITS = 5;
+    constexpr int NUM_CHARS = NUM_DIGITS + 1 + UNIT.size();
+    constexpr auto padding_left = (128 - 16 * NUM_CHARS) / 2;
+
+    oled.addressing_range(2, 5, padding_left);
+    std::array<uint8_t, 1 + sizeof(font_ter_u32b[0]) * NUM_CHARS> data;
+    data[0] = 0x40;
+    auto it = data.begin() + 1;
+    auto add_char = [&](char c) {
+        auto &font = get_font_ter_u32b(c);
+        it = std::copy(font.begin(), font.end(), it);
+    };
+    int scale = 10000;
+    while (scale >= 10) {
+        char digit = '0' + (time / scale) % 10;
+        if (scale > 10 && digit == '0') {
+            digit = ' ';
+        }
+        add_char(digit);
+        scale /= 10;
+    }
+    add_char('.');
+    add_char('0' + time % 10);
+    for (auto c : UNIT)
+        add_char(c);
+
+    oled.i2c_transmit(data, 30);
+}
+} // namespace
+
+void ui_set_delay::draw() {
+    oled.page_addressing_mode();
+    oled.set_pos(0, 0);
+    draw_title(title_txt, oled);
+
+    oled.clear(1);
+    oled.vertical_addressing_mode();
+
+    if (enabled[selected])
+        draw_time(oled, shutter_delay[selected]);
+    else
+        draw_OFF(oled);
+}
+
+void ui_set_delay::handle_button(uint8_t button, button_event event) {
+    if (event == button_event::press) {
+        if (button == 1) {
+            oled.addressing_range();
+            pm.pop();
+        } else if (!enabled[selected]) {
+            enabled[selected] = true;
+            draw_time(oled, shutter_delay[selected]);
+        } else if (button == 3) {
+            enabled[selected] = false;
+            oled.addressing_range();
+            oled.clear(2, 6);
+            oled.vertical_addressing_mode();
+            draw_OFF(oled);
+        } else if (button == 2 && shutter_delay[selected] < MAX_DELAY) {
+            shutter_delay[selected]++;
+            draw_time(oled, shutter_delay[selected]);
+        } else if (button == 0 && shutter_delay[selected] > 0) {
+            shutter_delay[selected]--;
+            draw_time(oled, shutter_delay[selected]);
         }
     }
 }
