@@ -44,12 +44,16 @@ class ui_cam_trigger : public ui_base {
     ui_set_delay set_delay_page;
 
     void update_order();
+    void save_config();
+    void read_config();
 
   public:
     static constexpr std::string_view title_txt = "CAMERA TRIGGER";
 
     ui_cam_trigger(oled_driver &oled, r74hc595_driver &shutter_trigger)
         : oled(oled), shutter_trigger(shutter_trigger), set_delay_page(oled, shutter_delay, enabled) {
+
+        read_config();
     };
     void draw_cam(int pos);
     virtual void draw() override;

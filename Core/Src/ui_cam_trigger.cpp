@@ -118,7 +118,56 @@ void ui_cam_trigger::handle_button(uint8_t button, button_event event, uint32_t 
         } else if (button == 1) {
             set_delay_page.select(selected);
             pm.push(set_delay_page);
+        } else if (button == 3) {
+            // TODO: test save
+            save_config();
         }
+    }
+}
+
+constexpr uint32_t CONFIG_ADDR = 0x0800f800;
+constexpr uint16_t CONFIG_MAGIC = 0x1234;
+
+void ui_cam_trigger::save_config() {
+    HAL_FLASH_Unlock();
+    FLASH_EraseInitTypeDef erase = {};
+    erase.TypeErase = FLASH_TYPEERASE_PAGES;
+    erase.Banks = FLASH_BANK_1;
+    erase.PageAddress = CONFIG_ADDR;
+    erase.NbPages = 1;
+    uint32_t page_error;
+    HAL_FLASHEx_Erase(&erase, &page_error);
+    assert(page_error == 0xffffffff);
+
+    auto next_config_addr = CONFIG_ADDR;
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, next_config_addr, CONFIG_MAGIC);
+    next_config_addr += 2;
+
+    for (int i = 0; i < 24; i++) {
+        HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, next_config_addr, shutter_delay[i]);
+        next_config_addr += 2;
+    }
+    uint32_t enabled_packed = 0;
+    for (int i = 0; i < 24; i++) {
+        enabled_packed |= (uint32_t)enabled[i] << i;
+    }
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, next_config_addr, enabled_packed);
+    next_config_addr += 4;
+    assert(next_config_addr <= CONFIG_ADDR + 0x400);
+    HAL_FLASH_Lock();
+}
+
+void ui_cam_trigger::read_config() {
+    if (*(uint16_t *)CONFIG_ADDR != CONFIG_MAGIC)
+        return;
+    auto next_config_addr = CONFIG_ADDR + 2;
+    for (int i = 0; i < 24; i++) {
+        shutter_delay[i] = *(uint16_t *)next_config_addr;
+        next_config_addr += 2;
+    }
+    uint32_t enabled_packed = *(uint32_t *)next_config_addr;
+    for (int i = 0; i < 24; i++) {
+        enabled[i] = enabled_packed & (1 << i);
     }
 }
 
