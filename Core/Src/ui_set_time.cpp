@@ -210,39 +210,27 @@ void ui_set_delay::draw() {
     oled.vertical_addressing_mode();
 
     if (enabled[selected])
-        draw_time(oled, shutter_delay[selected]);
+        _time_input.draw();
     else
         draw_OFF(oled);
 }
 
-void ui_set_delay::handle_button(uint8_t button, button_event event, uint32_t tick) {
+void time_input::handle_button(uint8_t button, button_event event, uint32_t tick) {
     if (event == button_event::press) {
-        if (button == 3) {
-            oled.addressing_range();
-            pm.pop();
-        } else if (!enabled[selected]) {
-            enabled[selected] = true;
-            draw_time(oled, shutter_delay[selected]);
-        } else if (button == 1) {
-            enabled[selected] = false;
-            oled.addressing_range();
-            oled.clear(2, 6);
-            oled.vertical_addressing_mode();
-            draw_OFF(oled);
-        } else if (op_dir != 0) {
+        if (op_dir != 0) {
             op_dir = 0;  // cancel operation if multiple buttons are pressed
         } else {
-            if (button == 2 && shutter_delay[selected] < MAX_DELAY) {
+            if (button == 2 && time < max_time) {
                 op_dir = 1;
-            } else if (button == 0 && shutter_delay[selected] > 0) {
+            } else if (button == 0 && time > 0) {
                 op_dir = -1;
             }
 
             if (op_dir != 0) {
-                shutter_delay[selected] += op_dir;
-                op_delay_start = shutter_delay[selected];
+                time += op_dir;
+                op_delay_start = time;
                 op_start_tick = tick;
-                draw_time(oled, shutter_delay[selected]);
+                draw_time(oled, time);
             }
         }
     } else if (event == button_event::release) {
@@ -252,7 +240,7 @@ void ui_set_delay::handle_button(uint8_t button, button_event event, uint32_t ti
     }
 }
 
-void ui_set_delay::tick(uint32_t tick) {
+void time_input::tick(uint32_t tick) {
     if (op_dir != 0 && tick - op_start_tick > 500) {
         int32_t t = tick - op_start_tick - 500;
         int32_t next_value = op_delay_start + op_dir * t / 100;
@@ -260,14 +248,74 @@ void ui_set_delay::tick(uint32_t tick) {
             int32_t t2 = t - 2000;
             next_value += op_dir * (t2 * t2 / 2000);
         }
-        if (next_value > MAX_DELAY) {
-            next_value = MAX_DELAY;
+        if (next_value > max_time) {
+            next_value = max_time;
             op_dir = 0;
         } else if (next_value < 0) {
             next_value = 0;
             op_dir = 0;
         }
-        shutter_delay[selected] = next_value;
-        draw_time(oled, shutter_delay[selected]);
+        time = next_value;
+        this->draw();
     }
+}
+
+void time_input::draw() {
+    draw_time(oled, time);
+}
+
+void ui_set_time::draw() {
+    oled.page_addressing_mode();
+    put_string_center(oled, title, 0, true);
+
+    oled.clear(1);
+    oled.vertical_addressing_mode();
+
+    _time_input.time = this->time;
+    _time_input.draw();
+}
+
+void ui_set_time::handle_button(uint8_t button, button_event event, uint32_t tick) {
+    if (event == button_event::press) {
+        if (button == 3) {
+            oled.addressing_range();
+            _dirty |= _time_input.time != this->time;
+            this->time = _time_input.time;
+            pm.pop();
+            return;
+        }
+    }
+    _time_input.handle_button(button, event, tick);
+}
+
+void ui_set_time::tick(uint32_t tick) {
+    _time_input.tick(tick);
+}
+
+void ui_set_delay::handle_button(uint8_t button, button_event event, uint32_t tick) {
+    if (event == button_event::press) {
+        if (button == 3) {
+            oled.addressing_range();
+            _dirty |= _time_input.time != shutter_delay[selected];
+            shutter_delay[selected] = _time_input.time;
+            pm.pop();
+        } else if (!enabled[selected]) {
+            enabled[selected] = true;
+            _time_input.draw();
+        } else if (button == 1) {
+            enabled[selected] = false;
+            oled.addressing_range();
+            oled.clear(2, 6);
+            oled.vertical_addressing_mode();
+            draw_OFF(oled);
+        } else {
+            _time_input.handle_button(button, event, tick);
+        }
+    } else {
+        _time_input.handle_button(button, event, tick);
+    }
+}
+
+void ui_set_delay::tick(uint32_t tick) {
+    _time_input.tick(tick);
 }

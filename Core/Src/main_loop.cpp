@@ -53,11 +53,13 @@ void main_loop() {
         test_mode();
 
     ui_individual_delay ui_i_delay(oled, shutter_trigger);
+    ui_set_time ui_base_delay(oled, "BASE DELAY");
+    ui_set_time ui_focus_advance(oled, "FOCUS ADVANCE");
 
     std::array<menu_item, 6> main_menu_items = {
         menu_item{"Individual Delay", [&]() { pm.push(ui_i_delay); }},
-        menu_item{"Base Delay",       []() { }},
-        menu_item{"Focus Advance",    []() { }},
+        menu_item{"Base Delay",       [&]() { pm.push(ui_base_delay); }},
+        menu_item{"Focus Advance",    [&]() { pm.push(ui_focus_advance); }},
         menu_item{"Save Timming",     []() { }},
         menu_item{"Trigger!",         []() { }},
         menu_item{"Settings",         []() { }},
