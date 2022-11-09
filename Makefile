@@ -39,7 +39,6 @@ C_SOURCES =  \
 Core/Src/main.c \
 Core/Src/stm32f1xx_it.c \
 Core/Src/stm32f1xx_hal_msp.c \
-Core/Src/utils.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio_ex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_i2c.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.c \
@@ -57,6 +56,7 @@ Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.c \
 Core/Src/system_stm32f1xx.c
 
 CXX_SOURCES =  \
+Core/Src/utils.cpp \
 Core/Src/main_loop.cpp \
 Core/Src/drivers.cpp \
 Core/Src/button.cpp \
@@ -64,7 +64,7 @@ Core/Src/74hc595.cpp \
 Core/Src/oled.cpp \
 Core/Src/ui_base.cpp \
 Core/Src/ui_menu.cpp \
-Core/Src/ui_individual_delay.cpp \
+Core/Src/ui_set_time.cpp \
 build/fonts.cpp
 
 # ASM sources

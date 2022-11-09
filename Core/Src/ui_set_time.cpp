@@ -1,5 +1,6 @@
-#include "ui_individual_delay.h"
+#include "ui_set_time.h"
 #include "fonts.h"
+#include "ui_menu.h"
 
 void ui_individual_delay::update_order() {
     for (size_t i = 0; i < order.size(); i++) {
@@ -16,28 +17,6 @@ void ui_individual_delay::update_order() {
         }
     }
 }
-
-namespace {
-void draw_title(std::string_view title_txt, oled_driver &oled) {
-    auto title_padding_left = (128 - 6 * title_txt.size()) / 2;
-    auto title_padding_right = (128 - 6 * title_txt.size() - title_padding_left);
-    std::array<uint8_t, 129> title;
-    auto it = title.begin();
-    *(it++) = 0x40;
-    std::fill_n(it, title_padding_left, 0xff);
-    it += title_padding_left;
-
-    for (char c : title_txt) {
-        auto &font = get_font6x8(c);
-        for (int i = 0; i < 6; i++)
-            *(it++) = ~font[i];
-    }
-
-    std::fill_n(it, title_padding_right, 0xff);
-
-    oled.i2c_transmit(title, 10);
-}
-} // namespace
 
 void ui_individual_delay::draw_cam(int pos) {
     bool selected = this->selected == pos;
@@ -95,8 +74,7 @@ void ui_individual_delay::draw_cam(int pos) {
 
 void ui_individual_delay::draw() {
     oled.page_addressing_mode();
-    oled.set_pos(0, 0);
-    draw_title(title_txt, oled);
+    put_string_center(oled, title_txt, 0, true);
 
     update_order();
     for (int i = 0; i < 24; i++) {
@@ -119,8 +97,7 @@ void ui_individual_delay::handle_button(uint8_t button, button_event event, uint
             set_delay_page.select(selected);
             pm.push(set_delay_page);
         } else if (button == 3) {
-            // TODO: test save
-            save_config();
+            pm.pop();
         }
     }
 }
@@ -130,11 +107,12 @@ constexpr uint16_t CONFIG_MAGIC = 0x1234;
 
 void ui_individual_delay::save_config() {
     HAL_FLASH_Unlock();
-    FLASH_EraseInitTypeDef erase = {};
-    erase.TypeErase = FLASH_TYPEERASE_PAGES;
-    erase.Banks = FLASH_BANK_1;
-    erase.PageAddress = CONFIG_ADDR;
-    erase.NbPages = 1;
+    FLASH_EraseInitTypeDef erase {
+        .TypeErase = FLASH_TYPEERASE_PAGES,
+        .Banks = FLASH_BANK_1,
+        .PageAddress = CONFIG_ADDR,
+        .NbPages = 1,
+    };
     uint32_t page_error;
     HAL_FLASHEx_Erase(&erase, &page_error);
     assert(page_error == 0xffffffff);
@@ -226,8 +204,7 @@ void draw_time(oled_driver &oled, uint16_t time) {
 
 void ui_set_delay::draw() {
     oled.page_addressing_mode();
-    oled.set_pos(0, 0);
-    draw_title(title_txt, oled);
+    put_string_center(oled, title_txt, 0, true);
 
     oled.clear(1);
     oled.vertical_addressing_mode();

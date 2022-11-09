@@ -1,7 +1,7 @@
 #include "drivers.h"
 #include "oled.h"
 #include "74hc595.h"
-#include "ui_individual_delay.h"
+#include "ui_set_time.h"
 #include "ui_menu.h"
 #include "utils.h"
 #include <cstdio>
@@ -15,12 +15,12 @@ oled_driver oled({
 });
 
 r74hc595_driver shutter_trigger({
-  .ser_port = SER_GPIO_Port,
-  .ser_pin = SER_Pin,
-  .rck_port = RCK_GPIO_Port,
-  .rck_pin = RCK_Pin,
-  .sck_port = SCK_GPIO_Port,
-  .sck_pin = SCK_Pin,
+    .ser_port = SER_GPIO_Port,
+    .ser_pin = SER_Pin,
+    .rck_port = RCK_GPIO_Port,
+    .rck_pin = RCK_Pin,
+    .sck_port = SCK_GPIO_Port,
+    .sck_pin = SCK_Pin,
 });
 
 void test_mode() {

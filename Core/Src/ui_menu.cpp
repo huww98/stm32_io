@@ -1,6 +1,6 @@
 #include "ui_menu.h"
 
-void put_string(oled_driver &oled, std::string_view str, uint8_t x, uint8_t y, bool item, bool invert = false) {
+void put_string(oled_driver &oled, std::string_view str, uint8_t x, uint8_t y, bool item, bool invert) {
     std::array<uint8_t, 129> data;
     data[0] = 0x40;
     auto it = data.begin() + 1;
@@ -28,14 +28,18 @@ void put_string(oled_driver &oled, std::string_view str, uint8_t x, uint8_t y, b
     oled.i2c_transmit(data, 10);
 }
 
+void put_string_center(oled_driver &oled, std::string_view str, uint8_t y, bool invert) {
+    uint8_t x = (128 - str.size() * 6) / 2;
+    put_string(oled, str, x, y, false, invert);
+}
+
 void ui_menu::draw_item(uint8_t index) {
     put_string(oled, menu_items[index].name, 0, index + 2, true, index == selected);
 }
 
 void ui_menu::draw() {
     oled.page_addressing_mode();
-    auto title_offset = (128 - title.size() * 6) / 2;
-    put_string(oled, title, title_offset, 0, false);
+    put_string_center(oled, title, 0);
 
     for (uint8_t i = 0; i < menu_items_count; i++)
         draw_item(i);
