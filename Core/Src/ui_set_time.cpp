@@ -217,13 +217,13 @@ void ui_set_delay::draw() {
 
 void ui_set_delay::handle_button(uint8_t button, button_event event, uint32_t tick) {
     if (event == button_event::press) {
-        if (button == 1) {
+        if (button == 3) {
             oled.addressing_range();
             pm.pop();
         } else if (!enabled[selected]) {
             enabled[selected] = true;
             draw_time(oled, shutter_delay[selected]);
-        } else if (button == 3) {
+        } else if (button == 1) {
             enabled[selected] = false;
             oled.addressing_range();
             oled.clear(2, 6);
