@@ -104,7 +104,7 @@ void ui_cam_trigger::draw() {
     }
 }
 
-void ui_cam_trigger::handle_button(uint8_t button, button_event event) {
+void ui_cam_trigger::handle_button(uint8_t button, button_event event, uint32_t tick) {
     if (event == button_event::press) {
         if (button == 0 || button == 2) {
             auto last_selected = selected;
@@ -154,10 +154,14 @@ void draw_time(oled_driver &oled, uint16_t time) {
         it = std::copy(font.begin(), font.end(), it);
     };
     int scale = 10000;
+    bool leading_zero = true;
     while (scale >= 10) {
         char digit = '0' + (time / scale) % 10;
-        if (scale > 10 && digit == '0') {
-            digit = ' ';
+        if (leading_zero) {
+            if (scale > 10 && digit == '0')
+                digit = ' ';
+            else
+                leading_zero = false;
         }
         add_char(digit);
         scale /= 10;
@@ -185,7 +189,7 @@ void ui_set_delay::draw() {
         draw_OFF(oled);
 }
 
-void ui_set_delay::handle_button(uint8_t button, button_event event) {
+void ui_set_delay::handle_button(uint8_t button, button_event event, uint32_t tick) {
     if (event == button_event::press) {
         if (button == 1) {
             oled.addressing_range();
@@ -199,12 +203,45 @@ void ui_set_delay::handle_button(uint8_t button, button_event event) {
             oled.clear(2, 6);
             oled.vertical_addressing_mode();
             draw_OFF(oled);
-        } else if (button == 2 && shutter_delay[selected] < MAX_DELAY) {
-            shutter_delay[selected]++;
-            draw_time(oled, shutter_delay[selected]);
-        } else if (button == 0 && shutter_delay[selected] > 0) {
-            shutter_delay[selected]--;
-            draw_time(oled, shutter_delay[selected]);
+        } else if (op_dir != 0) {
+            op_dir = 0;  // cancel operation if multiple buttons are pressed
+        } else {
+            if (button == 2 && shutter_delay[selected] < MAX_DELAY) {
+                op_dir = 1;
+            } else if (button == 0 && shutter_delay[selected] > 0) {
+                op_dir = -1;
+            }
+
+            if (op_dir != 0) {
+                shutter_delay[selected] += op_dir;
+                op_delay_start = shutter_delay[selected];
+                op_start_tick = tick;
+                draw_time(oled, shutter_delay[selected]);
+            }
         }
+    } else if (event == button_event::release) {
+        if (button == 2 || button == 0) {
+            op_dir = 0;
+        }
+    }
+}
+
+void ui_set_delay::tick(uint32_t tick) {
+    if (op_dir != 0 && tick - op_start_tick > 500) {
+        int32_t t = tick - op_start_tick - 500;
+        int32_t next_value = op_delay_start + op_dir * t / 100;
+        if (t > 2000) {
+            int32_t t2 = t - 2000;
+            next_value += op_dir * (t2 * t2 / 2000);
+        }
+        if (next_value > MAX_DELAY) {
+            next_value = MAX_DELAY;
+            op_dir = 0;
+        } else if (next_value < 0) {
+            next_value = 0;
+            op_dir = 0;
+        }
+        shutter_delay[selected] = next_value;
+        draw_time(oled, shutter_delay[selected]);
     }
 }

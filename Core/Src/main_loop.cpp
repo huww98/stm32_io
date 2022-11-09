@@ -54,9 +54,10 @@ void main_loop() {
             if (event != button_event::none) {
                 // sprintf(str, "%ld\tButton %d: %d\n", tick, i, int(event));
                 // txt.write_string(str);
-                pm.current_page().handle_button(i, event);
+                pm.current_page().handle_button(i, event, tick);
             }
         }
+        pm.current_page().tick(tick);
         // delay_us(1000000);
         // HAL_GPIO_TogglePin(LED0_GPIO_Port, LED0_Pin);
         // oled_test_seq(oled.i2c);

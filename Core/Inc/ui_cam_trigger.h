@@ -12,6 +12,10 @@ class ui_set_delay : public ui_base {
     std::array<bool, 24> &enabled;
     uint8_t selected = 0;
 
+    uint16_t op_delay_start;
+    uint32_t op_start_tick;
+    int op_dir = 0;
+
   public:
     static constexpr std::string_view title_txt = "SET SHUTTER DELAY";
     static constexpr uint16_t MAX_DELAY = 50000;
@@ -24,7 +28,8 @@ class ui_set_delay : public ui_base {
     }
 
     virtual void draw() override;
-    virtual void handle_button(uint8_t button, button_event event) override;
+    virtual void handle_button(uint8_t button, button_event event, uint32_t tick) override;
+    virtual void tick(uint32_t tick) override;
 };
 
 class ui_cam_trigger : public ui_base {
@@ -48,5 +53,5 @@ class ui_cam_trigger : public ui_base {
     };
     void draw_cam(int pos);
     virtual void draw() override;
-    virtual void handle_button(uint8_t button, button_event event) override;
+    virtual void handle_button(uint8_t button, button_event event, uint32_t tick) override;
 };
