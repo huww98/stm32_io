@@ -205,8 +205,8 @@ void time_input::tick(uint32_t tick) {
         int32_t t = tick - op_start_tick - 500;
         int32_t next_value = op_delay_start + op_dir * t / 100;
         if (t > 2000) {
-            int32_t t2 = t - 2000;
-            next_value += op_dir * (t2 * t2 / 2000);
+            int32_t t2 = (t - 2000) >> 2;
+            next_value += op_dir * (t2 * t2 * (max_time / 100) / (1000000 >> 4));
         }
         if (next_value > max_time) {
             next_value = max_time;
