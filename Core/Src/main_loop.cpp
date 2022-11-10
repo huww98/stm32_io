@@ -80,8 +80,10 @@ void main_loop() {
     shutter_timing.load();
     oled.init();
 
+#ifndef NDEBUG
     if (HAL_GPIO_ReadPin(BTN3_GPIO_Port, BTN3_Pin) == GPIO_PIN_RESET)
         test_mode();
+#endif
 
     pm.init(main_menu);
 
