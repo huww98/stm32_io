@@ -163,6 +163,10 @@ void oled_driver::set_pos(uint8_t x, uint8_t y) {
 void oled_driver::vertical_addressing_mode() {
     i2c_transmit(std::to_array<uint8_t>({0x00, 0x20, 0b01}));
 }
+void oled_driver::horizontal_addressing_mode() {
+    i2c_transmit(std::to_array<uint8_t>({0x00, 0x20, 0b00}));
+}
+
 
 void oled_driver::addressing_range(uint8_t begin_page, uint8_t end_page, uint8_t begin_col, uint8_t end_col) {
     i2c_transmit(std::to_array<uint8_t>({0x00,

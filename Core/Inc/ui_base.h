@@ -7,7 +7,7 @@
 
 class ui_base {
   public:
-    virtual void handle_button(uint8_t button, button_event event, uint32_t tick) {};
+    virtual void handle_button(uint8_t button, button_event event, uint32_t tick);
     virtual void draw() = 0;
     virtual void tick(uint32_t tick) {}
 };

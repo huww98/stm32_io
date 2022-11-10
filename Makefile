@@ -66,6 +66,7 @@ Core/Src/oled.cpp \
 Core/Src/ui_base.cpp \
 Core/Src/ui_menu.cpp \
 Core/Src/ui_set_time.cpp \
+Core/Src/ui_trigger.cpp \
 build/fonts.cpp
 
 # ASM sources

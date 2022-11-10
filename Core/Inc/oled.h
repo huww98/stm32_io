@@ -37,6 +37,7 @@ class oled_driver {
     void set_pos(uint8_t x, uint8_t y);
 
     void vertical_addressing_mode();
+    void horizontal_addressing_mode();
     void addressing_range(uint8_t begin_page=0, uint8_t end_page=7, uint8_t begin_col=0, uint8_t end_col=127);
 };
 
