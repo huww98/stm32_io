@@ -21,3 +21,13 @@ class r74hc595_driver {
         }
         void write(const uint8_t *data, size_t size);
 };
+
+struct camera_trigger_pin_def {
+    r74hc595_driver &driver;
+    GPIO_TypeDef *focus_port;
+    uint16_t focus_pin;
+
+    void write_focus(GPIO_PinState state) {
+        HAL_GPIO_WritePin(focus_port, focus_pin, state);
+    }
+};

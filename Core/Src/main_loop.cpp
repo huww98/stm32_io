@@ -25,6 +25,12 @@ r74hc595_driver shutter_trigger({
     .sck_pin = SCK_Pin,
 });
 
+camera_trigger_pin_def camera_trigger = {
+    .driver = shutter_trigger,
+    .focus_port = FOCUS_GPIO_Port,
+    .focus_pin = FOCUS_Pin,
+};
+
 void test_mode() {
     oled.test_seq();
     oled_text_mode txt(oled);
@@ -54,7 +60,7 @@ toast_t toast(oled);
 ui_individual_delay ui_i_delay(oled, shutter_trigger, shutter_timing);
 ui_set_time ui_base_delay(oled, "BASE DELAY", shutter_timing.base_delay, shutter_timing.dirty);
 ui_set_time ui_focus_advance(oled, "FOCUS ADVANCE", shutter_timing.focus_advance, shutter_timing.dirty);
-ui_trigger ui_c_trigger(oled, shutter_timing);
+ui_trigger ui_c_trigger(oled, camera_trigger, shutter_timing);
 
 std::array<menu_item, 3> settings_menu_items = {
     menu_item{"Display Contrast", []() { }},

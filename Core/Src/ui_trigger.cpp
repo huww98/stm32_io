@@ -1,5 +1,6 @@
 #include "ui_trigger.h"
 #include "fonts.h"
+#include <algorithm>
 
 constexpr int FOCUS_RO = 24;
 constexpr int FOCUS_RI = 22;
@@ -52,12 +53,97 @@ void ui_trigger::handle_button(uint8_t button, button_event event, uint32_t tick
             return;
         } else if (button == 3) {
             oled.addressing_range();
-            target_tick = -1;
-            last_countdown = -1;
-            last_focused = false;
+            this->reset_ui();
         }
     }
     ui_base::handle_button(button, event, tick);
+}
+
+namespace {
+
+struct trigger_action {
+    enum class action_type {
+        none,
+        trigger_shutter,
+        release_shutter,
+    } action;
+    uint8_t slot;
+    uint32_t n_reload;
+    uint32_t sys_tick;
+};
+
+void trigger_shutter(r74hc595_driver &driver, timing_t &timing, uint32_t target_tick) {
+    auto systick_reload = SysTick->LOAD;
+    std::array<trigger_action, 48> actions;
+
+    auto it = actions.begin();
+    for (uint8_t i = 0; i < timing.shutter_delay.size(); i++) {
+        if (!timing.enabled[i])
+            continue;
+        uint16_t delay = timing.shutter_delay[i];
+        auto tick = systick_reload - (delay % 10) * systick_reload / 10;
+        uint16_t n_reload = delay / 10;
+        *it++ = {
+            .action = trigger_action::action_type::trigger_shutter,
+            .slot = i,
+            .n_reload = n_reload,
+            .sys_tick = tick,
+        };
+        *it++ = {
+            .action = trigger_action::action_type::release_shutter,
+            .slot = i,
+            .n_reload = n_reload + 100u,
+            .sys_tick = tick,
+        };
+    }
+
+    auto end = it;
+    it = actions.begin();
+    std::sort(actions.begin(), end, [](auto &a, auto &b) {
+        return a.n_reload < b.n_reload || (a.n_reload == b.n_reload && a.sys_tick > b.sys_tick);
+    });
+
+    __disable_irq();
+    // delay to the actual target tick
+    [[maybe_unused]] auto dummy = SysTick->CTRL; // ensure COUNTFLAG is cleared
+    auto current_tick = HAL_GetTick();
+    auto pending_tick = target_tick - current_tick;
+    while (pending_tick) {
+        if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
+            pending_tick--;
+    }
+    uint32_t n_reload = 0;
+    std::array<uint8_t, 3> shutter_bits;
+    std::fill(shutter_bits.begin(), shutter_bits.end(), 0xFF);
+    while (it != end) {
+        if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
+            n_reload++;
+
+        auto tick = SysTick->VAL;
+        bool changed = false;
+        while ((it != end && (n_reload == it->n_reload && tick <= it->sys_tick)) || n_reload > it->n_reload) {
+            changed = true;
+            uint8_t mask = 1 << it->slot % 8;
+            uint8_t &byte = shutter_bits[it->slot / 8];
+
+            switch (it->action) {
+            case trigger_action::action_type::trigger_shutter:
+                byte &= ~mask;
+                break;
+            case trigger_action::action_type::release_shutter:
+                byte |= mask;
+                break;
+            default:
+                break;
+            }
+            it++;
+        }
+        if (changed)
+            driver.write(shutter_bits);
+    }
+    __enable_irq();
+}
+
 }
 
 void ui_trigger::tick(uint32_t tick) {
@@ -67,12 +153,18 @@ void ui_trigger::tick(uint32_t tick) {
     int32_t remaining = target_tick - static_cast<int32_t>(tick);
     auto countdown = (remaining - 1) / 1000 + 1;
     auto focused = remaining / 10 < timing.focus_advance;
+    auto target_tick = this->target_tick - 10; // reserve 10ms for task preparation
 
-    if (this->target_tick <= tick || countdown != last_countdown || focused != last_focused) {
+    if (target_tick < tick || countdown != last_countdown || focused != last_focused) {
+        if (focused != last_focused) {
+            assert(focused && !last_focused);
+            camera_trigger.write_focus(GPIO_PIN_RESET);
+        }
+
         last_countdown = countdown;
         last_focused = focused;
 
-        auto data = this->target_tick < tick ? SHUTTER_CIRCLE_BITS : SHUTTER_RING_BITS;
+        auto data = target_tick < tick ? SHUTTER_CIRCLE_BITS : SHUTTER_RING_BITS;
         if (focused) {
             for (size_t i = 1; i < data.size(); i++)
                 data[i] |= FOCUS_RING_BITS[i];
@@ -98,5 +190,12 @@ void ui_trigger::tick(uint32_t tick) {
         }
 
         oled.i2c_transmit(data, 50);
+
+        if (target_tick < tick) {
+            trigger_shutter(camera_trigger.driver, timing, this->target_tick);
+            camera_trigger.write_focus(GPIO_PIN_SET);
+            this->reset_ui();
+            this->draw();
+        }
     }
 }
