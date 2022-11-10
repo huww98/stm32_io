@@ -9,7 +9,11 @@
 class time_input {
   private:
     oled_driver &oled;
+    uint8_t scale;
+    uint8_t num_digits;
     uint16_t max_time;
+    std::string_view unit;
+    uint8_t padding_left;
 
     uint16_t op_delay_start;
     uint32_t op_start_tick;
@@ -18,7 +22,28 @@ class time_input {
   public:
     uint16_t time;
 
-    time_input(oled_driver &oled, uint16_t max_time=50000) : oled(oled), max_time(max_time) {}
+    time_input(oled_driver &oled, uint8_t scale=4, uint16_t max_time=50000)
+        : oled(oled), scale(scale), max_time(max_time) {
+
+        num_digits = 0;
+        {
+            auto max_time = this->max_time;
+            while (max_time) {
+                max_time /= 10;
+                num_digits++;
+            }
+        }
+        unit = "s";
+        if (this->scale >= 3) {
+            unit = "ms";
+            this->scale -= 3;
+        }
+        int num_chars = num_digits + unit.size();
+        if (this->scale > 0)
+            num_chars++;
+
+        padding_left = (128 - 16 * num_chars) / 2;
+    }
 
     void handle_button(uint8_t button, button_event event, uint32_t tick);
     void tick(uint32_t tick);
@@ -35,7 +60,7 @@ class ui_set_time : public ui_base {
     bool &dirty;
 
     ui_set_time(oled_driver &oled, std::string_view title, uint16_t &time, bool &dirty)
-        : oled(oled), title(title), _time_input(oled), time(time), dirty(dirty) {}
+        : oled(oled), title(title), _time_input(oled, 2, 6000), time(time), dirty(dirty) {}
 
     virtual void draw() override;
     virtual void handle_button(uint8_t button, button_event event, uint32_t tick) override;
@@ -55,7 +80,7 @@ class ui_set_delay : public ui_base {
     static constexpr uint16_t MAX_DELAY = 50000;
 
     ui_set_delay(oled_driver &oled, timing_t &timing)
-        : oled(oled), timing(timing), _time_input(oled, MAX_DELAY) {
+        : oled(oled), timing(timing), _time_input(oled, 4, MAX_DELAY) {
     }
 
     void select(uint8_t pos) {

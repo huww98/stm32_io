@@ -118,42 +118,49 @@ void draw_OFF(oled_driver &oled) {
     }
     oled.i2c_transmit(data, 20);
 }
+} // namespace
 
-void draw_time(oled_driver &oled, uint16_t time) {
-    constexpr std::string_view UNIT = "ms";
-    constexpr int NUM_DIGITS = 5;
-    constexpr int NUM_CHARS = NUM_DIGITS + 1 + UNIT.size();
-    constexpr auto padding_left = (128 - 16 * NUM_CHARS) / 2;
-
+void time_input::draw() {
     oled.addressing_range(2, 5, padding_left);
-    std::array<uint8_t, 1 + sizeof(font_ter_u32b[0]) * NUM_CHARS> data;
+    std::array<uint8_t, 1 + sizeof(font_ter_u32b[0])> data;
     data[0] = 0x40;
     auto it = data.begin() + 1;
     auto add_char = [&](char c) {
         auto &font = get_font_ter_u32b(c);
-        it = std::copy(font.begin(), font.end(), it);
+        std::copy(font.begin(), font.end(), it);
+        oled.i2c_transmit(data, 10);
     };
-    int scale = 10000;
+    int mod = 1;
+    for (int i = 1; i < num_digits; i++)
+        mod *= 10;
+
+    int integer_part = num_digits - scale;
+    int fractional_part = scale;
     bool leading_zero = true;
-    while (scale >= 10) {
-        char digit = '0' + (time / scale) % 10;
+    while (integer_part) {
+        char digit = '0' + (time / mod) % 10;
+        integer_part--;
+        mod /= 10;
         if (leading_zero) {
-            if (scale > 10 && digit == '0')
+            if (integer_part > 0 && digit == '0')
                 digit = ' ';
             else
                 leading_zero = false;
         }
         add_char(digit);
-        scale /= 10;
     }
-    add_char('.');
-    add_char('0' + time % 10);
-    for (auto c : UNIT)
+    if (fractional_part) {
+        add_char('.');
+        while (fractional_part) {
+            char digit = '0' + (time / mod) % 10;
+            fractional_part--;
+            mod /= 10;
+            add_char(digit);
+        }
+    }
+    for (auto c : unit)
         add_char(c);
-
-    oled.i2c_transmit(data, 30);
 }
-} // namespace
 
 void ui_set_delay::draw() {
     oled.page_addressing_mode();
@@ -183,7 +190,7 @@ void time_input::handle_button(uint8_t button, button_event event, uint32_t tick
                 time += op_dir;
                 op_delay_start = time;
                 op_start_tick = tick;
-                draw_time(oled, time);
+                this->draw();
             }
         }
     } else if (event == button_event::release) {
@@ -211,10 +218,6 @@ void time_input::tick(uint32_t tick) {
         time = next_value;
         this->draw();
     }
-}
-
-void time_input::draw() {
-    draw_time(oled, time);
 }
 
 void ui_set_time::draw() {
