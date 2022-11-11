@@ -22,11 +22,10 @@ class button_driver {
 
   public:
     static constexpr uint32_t DEBOUNCE_TIME = 30;
-    button_driver(button_pin_def &&pin_def) : _pin_def(pin_def){
-        _state = _transit_state = HAL_GPIO_ReadPin(_pin_def.port, _pin_def.pin);
-    };
+    button_driver(button_pin_def &&pin_def) : _pin_def(pin_def) {};
     const button_pin_def &pin_def() const { return _pin_def; };
 
+    void init();
     button_event update(uint32_t current_tick);
     void interrupt();
 };

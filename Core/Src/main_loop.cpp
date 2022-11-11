@@ -92,6 +92,8 @@ extern "C" {
 void main_loop() {
     shutter_trigger.reset(24);
     oled.init();
+    for (auto &b : bottons)
+        b.init();
     shutter_timing.load();
 
 #ifndef NDEBUG

@@ -13,6 +13,10 @@ button_event button_driver::update(uint32_t current_tick) {
     return button_event::none;
 }
 
+void button_driver::init() {
+    _state = _transit_state = HAL_GPIO_ReadPin(_pin_def.port, _pin_def.pin);
+}
+
 void button_driver::interrupt() {
     _transit_state = HAL_GPIO_ReadPin(_pin_def.port, _pin_def.pin);
 }
