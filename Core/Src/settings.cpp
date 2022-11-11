@@ -22,7 +22,7 @@ void settings_t::save() {
     HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, next_config_addr, SETTINGS_MAGIC);
     next_config_addr += 2;
 
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, next_config_addr, contrast);
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, next_config_addr, contrast | (sleep_enabled << 8));
     next_config_addr += 2;
 
     HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, next_config_addr, sleep_timeout);
@@ -36,8 +36,12 @@ void settings_t::load() {
     if (*(uint16_t *)SETTINGS_FLASH_ADDR != SETTINGS_MAGIC)
         return;
     auto next_config_addr = SETTINGS_FLASH_ADDR + 2;
-    contrast = *(uint16_t *)next_config_addr;
-    next_config_addr += 2;
+    contrast = *(uint8_t *)next_config_addr;
+    next_config_addr += 1;
+
+    sleep_enabled = *(uint8_t *)next_config_addr & 1;
+    next_config_addr += 1;
+
     sleep_timeout = *(uint16_t *)next_config_addr;
     next_config_addr += 2;
     assert(next_config_addr <= SETTINGS_FLASH_ADDR + 0x400);

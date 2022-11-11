@@ -68,7 +68,7 @@ Core/Src/74hc595.cpp \
 Core/Src/oled.cpp \
 Core/Src/ui_base.cpp \
 Core/Src/ui_menu.cpp \
-Core/Src/ui_set_time.cpp \
+Core/Src/ui_set_delay.cpp \
 Core/Src/ui_trigger.cpp \
 Core/Src/ui_about.cpp \
 $(BUILD_DIR)/fonts.cpp

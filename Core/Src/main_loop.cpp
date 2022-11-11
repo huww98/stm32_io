@@ -3,7 +3,8 @@
 #include "74hc595.h"
 #include "timing.h"
 #include "settings.h"
-#include "ui_set_time.h"
+#include "ui_set_delay.h"
+#include "ui_set_value.h"
 #include "ui_trigger.h"
 #include "ui_menu.h"
 #include "ui_about.h"
@@ -61,11 +62,11 @@ settings_t settings;
 toast_t toast(oled);
 
 ui_individual_delay ui_i_delay(oled, shutter_trigger, shutter_timing);
-ui_set_time ui_base_delay(oled, "BASE DELAY", base_delay_desc{shutter_timing});
-ui_set_time ui_focus_advance(oled, "FOCUS ADVANCE", focus_advance_desc{shutter_timing});
+ui_set_value ui_base_delay(oled, base_delay_desc{shutter_timing});
+ui_set_value ui_focus_advance(oled, focus_advance_desc{shutter_timing});
 ui_trigger ui_c_trigger(oled, camera_trigger, shutter_timing);
 
-ui_set_time ui_sleep_timeout(oled, "SLEEP TIMEOUT", sleep_timeout_desc{settings});
+ui_set_value ui_sleep_timeout(oled, sleep_timeout_desc{settings});
 ui_about_t ui_about(oled);
 
 std::array<menu_item, 4> settings_menu_items = {

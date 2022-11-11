@@ -1,4 +1,4 @@
-#include "ui_set_time.h"
+#include "ui_set_delay.h"
 #include "fonts.h"
 #include "ui_menu.h"
 
@@ -120,7 +120,7 @@ void draw_OFF(oled_driver &oled) {
 }
 } // namespace
 
-void time_input::draw() {
+void value_input::draw() {
     oled.addressing_range(2, 5, padding_left);
     std::array<uint8_t, 1 + sizeof(font_ter_u32b[0])> data;
     data[0] = 0x40;
@@ -175,7 +175,7 @@ void ui_set_delay::draw() {
         draw_OFF(oled);
 }
 
-void time_input::handle_button(uint8_t button, button_event event, uint32_t tick) {
+void value_input::handle_button(uint8_t button, button_event event, uint32_t tick) {
     if (event == button_event::press) {
         if (op_dir != 0) {
             op_dir = 0;  // cancel operation if multiple buttons are pressed
@@ -200,7 +200,7 @@ void time_input::handle_button(uint8_t button, button_event event, uint32_t tick
     }
 }
 
-void time_input::tick(uint32_t tick) {
+void value_input::tick(uint32_t tick) {
     if (op_dir != 0 && tick - op_start_tick > 500) {
         int32_t t = tick - op_start_tick - 500;
         int32_t next_value = op_delay_start + op_dir * t / 100;
