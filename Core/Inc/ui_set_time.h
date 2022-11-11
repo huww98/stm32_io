@@ -5,6 +5,7 @@
 #include "oled.h"
 #include "timing.h"
 #include "ui_base.h"
+#include "ui_menu.h"
 
 class time_input {
   private:
@@ -50,21 +51,44 @@ class time_input {
     void draw();
 };
 
+template<typename TimeDesc>
 class ui_set_time : public ui_base {
   private:
     oled_driver &oled;
     std::string_view title;
     time_input _time_input;
   public:
-    uint16_t &time;
-    bool &dirty;
+    TimeDesc time_desc;
 
-    ui_set_time(oled_driver &oled, std::string_view title, uint16_t &time, bool &dirty)
-        : oled(oled), title(title), _time_input(oled, 2, 6000), time(time), dirty(dirty) {}
+    ui_set_time(oled_driver &oled, std::string_view title, TimeDesc &&desc)
+        : oled(oled), title(title), _time_input(oled, desc.scale, desc.max), time_desc(desc) {}
 
-    virtual void draw() override;
-    virtual void handle_button(uint8_t button, button_event event, uint32_t tick) override;
-    virtual void tick(uint32_t tick) override;
+    virtual void draw() override {
+        oled.page_addressing_mode();
+        put_string_center(oled, title, 0, true);
+
+        oled.clear(1);
+        oled.vertical_addressing_mode();
+
+        _time_input.time = time_desc.time();
+        _time_input.draw();
+    }
+
+    virtual void handle_button(uint8_t button, button_event event, uint32_t tick) override {
+        if (event == button_event::press) {
+            if (button == 3) {
+                oled.addressing_range();
+                time_desc.time(_time_input.time);
+                pm.pop();
+                return;
+            }
+        }
+        _time_input.handle_button(button, event, tick);
+    }
+
+    virtual void tick(uint32_t tick) override {
+        _time_input.tick(tick);
+    }
 };
 
 class ui_set_delay : public ui_base {

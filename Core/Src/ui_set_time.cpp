@@ -220,34 +220,6 @@ void time_input::tick(uint32_t tick) {
     }
 }
 
-void ui_set_time::draw() {
-    oled.page_addressing_mode();
-    put_string_center(oled, title, 0, true);
-
-    oled.clear(1);
-    oled.vertical_addressing_mode();
-
-    _time_input.time = this->time;
-    _time_input.draw();
-}
-
-void ui_set_time::handle_button(uint8_t button, button_event event, uint32_t tick) {
-    if (event == button_event::press) {
-        if (button == 3) {
-            oled.addressing_range();
-            dirty |= _time_input.time != this->time;
-            this->time = _time_input.time;
-            pm.pop();
-            return;
-        }
-    }
-    _time_input.handle_button(button, event, tick);
-}
-
-void ui_set_time::tick(uint32_t tick) {
-    _time_input.tick(tick);
-}
-
 void ui_set_delay::handle_button(uint8_t button, button_event event, uint32_t tick) {
     if (event == button_event::press) {
         if (button == 3) {

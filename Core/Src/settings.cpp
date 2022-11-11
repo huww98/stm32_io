@@ -30,8 +30,6 @@ void settings_t::save() {
 
     assert(next_config_addr <= SETTINGS_FLASH_ADDR + 0x400);
     HAL_FLASH_Lock();
-
-    dirty = false;
 }
 
 void settings_t::load() {
@@ -43,8 +41,6 @@ void settings_t::load() {
     sleep_timeout = *(uint16_t *)next_config_addr;
     next_config_addr += 2;
     assert(next_config_addr <= SETTINGS_FLASH_ADDR + 0x400);
-
-    dirty = false;
 }
 
 void settings_t::reset() {

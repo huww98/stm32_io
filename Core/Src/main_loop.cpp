@@ -2,6 +2,7 @@
 #include "oled.h"
 #include "74hc595.h"
 #include "timing.h"
+#include "settings.h"
 #include "ui_set_time.h"
 #include "ui_trigger.h"
 #include "ui_menu.h"
@@ -55,19 +56,24 @@ void test_mode() {
 }
 
 timing_t shutter_timing;
+settings_t settings;
 
 toast_t toast(oled);
 
 ui_individual_delay ui_i_delay(oled, shutter_trigger, shutter_timing);
-ui_set_time ui_base_delay(oled, "BASE DELAY", shutter_timing.base_delay, shutter_timing.dirty);
-ui_set_time ui_focus_advance(oled, "FOCUS ADVANCE", shutter_timing.focus_advance, shutter_timing.dirty);
+ui_set_time ui_base_delay(oled, "BASE DELAY", base_delay_desc{shutter_timing});
+ui_set_time ui_focus_advance(oled, "FOCUS ADVANCE", focus_advance_desc{shutter_timing});
 ui_trigger ui_c_trigger(oled, camera_trigger, shutter_timing);
+
+ui_set_time ui_sleep_timeout(oled, "SLEEP TIMEOUT", sleep_timeout_desc{settings});
 ui_about_t ui_about(oled);
 
-std::array<menu_item, 3> settings_menu_items = {
+std::array<menu_item, 4> settings_menu_items = {
+    menu_item{"Sleep Timeout",    []() { pm.push(ui_sleep_timeout); }},
     menu_item{"Display Contrast", []() { }},
     menu_item{"Reset",            []() {
         shutter_timing.reset();
+        settings.reset();
         HAL_NVIC_SystemReset();
     }},
     menu_item{"About",            []() { pm.push(ui_about); }},
@@ -95,6 +101,7 @@ void main_loop() {
     for (auto &b : bottons)
         b.init();
     shutter_timing.load();
+    settings.load();
 
 #ifndef NDEBUG
     if (HAL_GPIO_ReadPin(BTN3_GPIO_Port, BTN3_Pin) == GPIO_PIN_RESET)
