@@ -72,7 +72,14 @@ struct trigger_action {
     uint32_t sys_tick;
 };
 
-void trigger_shutter(r74hc595_driver &driver, timing_t &timing, uint32_t target_tick) {
+struct trigger_step {
+    std::array<uint8_t, 3> shutter_bits;
+    uint32_t n_reload;
+    uint32_t sys_tick;
+};
+
+template<typename IT>
+IT build_steps(timing_t &timing, IT steps_begin) {
     auto systick_reload = SysTick->LOAD;
     std::array<trigger_action, 48> actions;
 
@@ -103,28 +110,19 @@ void trigger_shutter(r74hc595_driver &driver, timing_t &timing, uint32_t target_
         return a.n_reload < b.n_reload || (a.n_reload == b.n_reload && a.sys_tick > b.sys_tick);
     });
 
-    __disable_irq();
-    // delay to the actual target tick
-    [[maybe_unused]] auto dummy = SysTick->CTRL; // ensure COUNTFLAG is cleared
-    auto current_tick = HAL_GetTick();
-    auto pending_tick = target_tick - current_tick;
-    while (pending_tick) {
-        if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
-            pending_tick--;
-    }
-    uint32_t n_reload = 0;
-    std::array<uint8_t, 3> shutter_bits;
-    std::fill(shutter_bits.begin(), shutter_bits.end(), 0xFF);
-    while (it != end) {
-        if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
-            n_reload++;
+    auto it_s = steps_begin;
 
-        auto tick = SysTick->VAL;
-        bool changed = false;
-        while ((it != end && (n_reload == it->n_reload && tick <= it->sys_tick)) || n_reload > it->n_reload) {
-            changed = true;
+    while (it != end) {
+        it_s->n_reload = it->n_reload;
+        it_s->sys_tick = it->sys_tick;
+        if (it_s == steps_begin)
+            std::fill(it_s->shutter_bits.begin(), it_s->shutter_bits.end(), 0xFF);
+        else
+            it_s->shutter_bits = std::prev(it_s)->shutter_bits;
+
+        while (it != end && it_s->n_reload == it->n_reload && it_s->sys_tick == it->sys_tick) {
             uint8_t mask = 1 << it->slot % 8;
-            uint8_t &byte = shutter_bits[it->slot / 8];
+            uint8_t &byte = it_s->shutter_bits[it->slot / 8];
 
             switch (it->action) {
             case trigger_action::action_type::trigger_shutter:
@@ -138,8 +136,34 @@ void trigger_shutter(r74hc595_driver &driver, timing_t &timing, uint32_t target_
             }
             it++;
         }
-        if (changed)
-            driver.write(shutter_bits);
+        it_s++;
+    }
+
+    return it_s;
+}
+
+void trigger_shutter(r74hc595_driver &driver, timing_t &timing, uint32_t target_tick) {
+    std::array<trigger_step, 48> steps;
+    auto steps_end = build_steps(timing, steps.begin());
+
+    __disable_irq();
+    // delay to the actual target tick
+    [[maybe_unused]] auto dummy = SysTick->CTRL; // ensure COUNTFLAG is cleared
+    auto current_tick = HAL_GetTick();
+    auto pending_tick = target_tick - current_tick;
+    while (pending_tick) {
+        if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
+            pending_tick--;
+    }
+    uint32_t n_reload = 0;
+
+    for (auto it = steps.begin(); it != steps_end; it++) {
+        while (n_reload < it->n_reload || (n_reload == it->n_reload && SysTick->VAL > it->sys_tick)) {
+            if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)
+                n_reload++;
+        }
+
+        driver.write(it->shutter_bits);
     }
     __enable_irq();
 }

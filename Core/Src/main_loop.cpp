@@ -38,7 +38,7 @@ void test_mode() {
     // txt.write_string("This is a very loooooong line of text.\n");
     // txt.write_string("\ta\nt\ta\nta\ta\ntab\ta\n");
     char str[24];
-    while (1) {
+    while (true) {
         auto tick = HAL_GetTick();
         for (uint8_t i = 0; i < bottons.size(); i++) {
             auto event = bottons[i].update(tick);
@@ -85,8 +85,9 @@ ui_menu main_menu(oled, "[CAMERA TRIGGER]", main_menu_items);
 
 extern "C" {
 void main_loop() {
-    shutter_timing.load();
+    shutter_trigger.reset(24);
     oled.init();
+    shutter_timing.load();
 
 #ifndef NDEBUG
     if (HAL_GPIO_ReadPin(BTN3_GPIO_Port, BTN3_Pin) == GPIO_PIN_RESET)
@@ -95,7 +96,7 @@ void main_loop() {
 
     pm.init(main_menu);
 
-    while (1) {
+    while (true) {
         auto tick = HAL_GetTick();
         for (uint8_t i = 0; i < bottons.size(); i++) {
             auto event = bottons[i].update(tick);

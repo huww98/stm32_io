@@ -22,3 +22,17 @@ void r74hc595_driver::write(const uint8_t *data, size_t len) {
     HAL_GPIO_WritePin(_pin_def.rck_port, _pin_def.rck_pin, GPIO_PIN_RESET);
     r74hc595_delay(delay);
 }
+
+void r74hc595_driver::reset(size_t n) {
+    HAL_GPIO_WritePin(_pin_def.ser_port, _pin_def.ser_pin, GPIO_PIN_SET);
+    for (size_t i = 0; i < n; i++) {
+        HAL_GPIO_WritePin(_pin_def.sck_port, _pin_def.sck_pin, GPIO_PIN_RESET);
+        r74hc595_delay(delay);
+        HAL_GPIO_WritePin(_pin_def.sck_port, _pin_def.sck_pin, GPIO_PIN_SET);
+        r74hc595_delay(delay);
+    }
+    HAL_GPIO_WritePin(_pin_def.rck_port, _pin_def.rck_pin, GPIO_PIN_SET);
+    r74hc595_delay(delay);
+    HAL_GPIO_WritePin(_pin_def.rck_port, _pin_def.rck_pin, GPIO_PIN_RESET);
+    r74hc595_delay(delay);
+}
