@@ -67,3 +67,17 @@ void timing_t::load() {
 
     dirty = false;
 }
+
+void timing_t::reset() {
+    HAL_FLASH_Unlock();
+    FLASH_EraseInitTypeDef erase {
+        .TypeErase = FLASH_TYPEERASE_PAGES,
+        .Banks = FLASH_BANK_1,
+        .PageAddress = TIMING_FLASH_ADDR,
+        .NbPages = 1,
+    };
+    uint32_t page_error;
+    HAL_FLASHEx_Erase(&erase, &page_error);
+    assert(page_error == 0xffffffff);
+    HAL_FLASH_Lock();
+}

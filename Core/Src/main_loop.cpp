@@ -64,7 +64,10 @@ ui_trigger ui_c_trigger(oled, camera_trigger, shutter_timing);
 
 std::array<menu_item, 3> settings_menu_items = {
     menu_item{"Display Contrast", []() { }},
-    menu_item{"Reset",            []() { }},
+    menu_item{"Reset",            []() {
+        shutter_timing.reset();
+        HAL_NVIC_SystemReset();
+    }},
     menu_item{"About",            []() { }},
 };
 ui_menu settings_menu(oled, "[SETTINGS]", settings_menu_items);

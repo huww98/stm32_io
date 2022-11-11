@@ -16,13 +16,15 @@ enum class button_event {
 class button_driver {
   private:
     button_pin_def _pin_def;
-    GPIO_PinState _state = GPIO_PinState::GPIO_PIN_SET;
-    GPIO_PinState _transit_state = GPIO_PinState::GPIO_PIN_SET;
+    GPIO_PinState _state;
+    GPIO_PinState _transit_state;
     uint32_t _last_event_tick = 0;
 
   public:
     static constexpr uint32_t DEBOUNCE_TIME = 30;
-    button_driver(button_pin_def &&pin_def) : _pin_def(pin_def){};
+    button_driver(button_pin_def &&pin_def) : _pin_def(pin_def){
+        _state = _transit_state = HAL_GPIO_ReadPin(_pin_def.port, _pin_def.pin);
+    };
     const button_pin_def &pin_def() const { return _pin_def; };
 
     button_event update(uint32_t current_tick);
