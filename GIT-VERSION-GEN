@@ -1,0 +1,30 @@
+#!/bin/sh
+
+GVF=$1
+
+LF='
+'
+
+VN=unknown
+
+if test -d ${GIT_DIR:-.git} -o -f .git; then
+	VN=$(git describe --match "v[0-9]*" --dirty --always)
+    if test "$VN" = "$LF"; then
+        exit 1
+    fi
+fi
+
+VH="#pragma once
+#include <string_view>
+constexpr std::string_view GIT_VERSION = \"${VN}\";"
+
+if test -r $GVF
+then
+	VC=$(cat $GVF)
+else
+	VC=unset
+fi
+test "$VC" = "$VH" || {
+	echo >&2 "GIT_VERSION = $VN"
+	echo "$VH" >$GVF
+}

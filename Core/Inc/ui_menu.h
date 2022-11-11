@@ -3,7 +3,7 @@
 #include "ui_base.h"
 #include "oled.h"
 
-void put_string(oled_driver &oled, std::string_view str, uint8_t x, uint8_t y, bool item, bool invert = false);
+void put_string(oled_driver &oled, std::string_view str, uint8_t x, uint8_t y, bool item = false, bool invert = false);
 void put_string_center(oled_driver &oled, std::string_view str, uint8_t y, bool invert = false);
 void put_string_no_fill(oled_driver &oled, std::string_view str, uint8_t x, uint8_t y, bool invert = false);
 void put_string_no_fill_center(oled_driver &oled, std::string_view str, uint8_t y, bool invert = false);

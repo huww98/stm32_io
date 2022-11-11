@@ -5,6 +5,7 @@
 #include "ui_set_time.h"
 #include "ui_trigger.h"
 #include "ui_menu.h"
+#include "ui_about.h"
 #include "utils.h"
 #include <cstdio>
 
@@ -61,6 +62,7 @@ ui_individual_delay ui_i_delay(oled, shutter_trigger, shutter_timing);
 ui_set_time ui_base_delay(oled, "BASE DELAY", shutter_timing.base_delay, shutter_timing.dirty);
 ui_set_time ui_focus_advance(oled, "FOCUS ADVANCE", shutter_timing.focus_advance, shutter_timing.dirty);
 ui_trigger ui_c_trigger(oled, camera_trigger, shutter_timing);
+ui_about_t ui_about(oled);
 
 std::array<menu_item, 3> settings_menu_items = {
     menu_item{"Display Contrast", []() { }},
@@ -68,7 +70,7 @@ std::array<menu_item, 3> settings_menu_items = {
         shutter_timing.reset();
         HAL_NVIC_SystemReset();
     }},
-    menu_item{"About",            []() { }},
+    menu_item{"About",            []() { pm.push(ui_about); }},
 };
 ui_menu settings_menu(oled, "[SETTINGS]", settings_menu_items);
 
