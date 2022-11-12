@@ -87,9 +87,13 @@ std::array<menu_item, 6> main_menu_items = {
     menu_item{"Base Delay",       []() { pm.push(ui_base_delay); }},
     menu_item{"Focus Advance",    []() { pm.push(ui_focus_advance); }},
     menu_item{"Save Timing",      []() {
-        toast.show("Saving", -1);
-        shutter_timing.save();
-        toast.reset("Saved");
+        if (shutter_timing.dirty) {
+            toast.show("Saving", -1);
+            shutter_timing.save();
+            toast.reset("Saved");
+        } else {
+            toast.show("No changes");
+        }
     }},
     menu_item{"Trigger!",         []() { pm.push(ui_c_trigger); }},
     menu_item{"Settings",         []() { pm.push(settings_menu); }},

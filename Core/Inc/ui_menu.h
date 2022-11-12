@@ -56,8 +56,8 @@ class toast_t : public ui_base {
     static constexpr int TEXT_LINE = PADDING_TOP + (8 - PADDING_TOP - PADDING_BOTTOM) / 2;
 
     toast_t(oled_driver &oled) : oled(oled) {}
-    void reset(std::string_view text, uint32_t duration=2000);
-    void show(std::string_view text, uint32_t duration=2000);
+    void reset(std::string_view text, uint32_t duration=1000);
+    void show(std::string_view text, uint32_t duration=1000);
 
     virtual void draw() override;
     virtual void tick(uint32_t tick) override;
