@@ -67,11 +67,12 @@ ui_set_value ui_focus_advance(oled, focus_advance_desc{shutter_timing});
 ui_trigger ui_c_trigger(oled, camera_trigger, shutter_timing);
 
 ui_set_value ui_sleep_timeout(oled, sleep_timeout_desc{settings});
+ui_set_value ui_contrast(oled, display_contrast_desc{settings});
 ui_about_t ui_about(oled);
 
 std::array<menu_item, 4> settings_menu_items = {
     menu_item{"Sleep Timeout",    []() { pm.push(ui_sleep_timeout); }},
-    menu_item{"Display Contrast", []() { }},
+    menu_item{"Display Contrast", []() { pm.push(ui_contrast); }},
     menu_item{"Reset",            []() {
         shutter_timing.reset();
         settings.reset();

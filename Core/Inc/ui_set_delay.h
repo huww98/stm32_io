@@ -15,12 +15,13 @@ class ui_set_delay : public ui_base {
     static constexpr uint16_t MAX_DELAY = 50000;
 
     ui_set_delay(oled_driver &oled, timing_t &timing)
-        : oled(oled), timing(timing), _time_input(oled, 4, MAX_DELAY) {
+        : oled(oled), timing(timing), _time_input(oled, 4, MAX_DELAY, value_input_type::time, "OFF") {
     }
 
     void select(uint8_t pos) {
         selected = pos;
         _time_input.time = timing.shutter_delay[selected];
+        _time_input.enabled = timing.enabled[selected];
     }
 
     virtual void draw() override;

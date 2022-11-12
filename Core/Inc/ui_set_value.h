@@ -19,6 +19,7 @@ class value_input {
     uint8_t num_digits;
     uint16_t max_time;
     std::string_view unit;
+    std::string_view disabled_text;
     uint8_t padding_left;
 
     uint16_t op_delay_start;
@@ -27,9 +28,10 @@ class value_input {
 
   public:
     uint16_t time;
+    bool enabled = true;
 
-    value_input(oled_driver &oled, uint8_t scale=4, uint16_t max_time=50000, value_input_type type=value_input_type::time)
-        : oled(oled), scale(scale), max_time(max_time) {
+    value_input(oled_driver &oled, uint8_t scale=4, uint16_t max_time=50000, value_input_type type=value_input_type::time, std::string_view disabled_text="")
+        : oled(oled), scale(scale), max_time(max_time), disabled_text(disabled_text) {
 
         num_digits = 0;
         {
@@ -79,9 +81,17 @@ concept value_desc = requires(T t) {
 template<typename T>
 concept can_disable = requires(T t, uint16_t v, bool enabled) {
     { t.disabled_text } -> std::convertible_to<std::string_view>;
-    { t.enabled } -> std::convertible_to<bool>;
+    { t.enabled() } -> std::convertible_to<bool>;
     t.value(v, enabled);
 };
+
+template<typename T>
+constexpr std::string_view disabled_text(const T &desc) {
+    if constexpr (can_disable<T>)
+        return desc.disabled_text;
+    else
+        return "";
+}
 
 template<value_desc TimeDesc>
 class ui_set_value : public ui_base {
@@ -92,7 +102,7 @@ class ui_set_value : public ui_base {
     TimeDesc time_desc;
 
     ui_set_value(oled_driver &oled, TimeDesc &&desc)
-        : oled(oled), _time_input(oled, desc.scale, desc.max, desc.type), time_desc(desc) {}
+        : oled(oled), _time_input(oled, desc.scale, desc.max, desc.type, disabled_text(desc)), time_desc(desc) {}
 
     virtual void draw() override {
         oled.page_addressing_mode();

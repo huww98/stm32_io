@@ -23,6 +23,7 @@ struct sleep_timeout_desc {
     settings_t &settings;
 
     uint16_t value() const { return settings.sleep_timeout; }
+    bool enabled() const { return settings.sleep_enabled; }
     void value(uint16_t t, bool enabled=true) {
         if (settings.sleep_timeout != t || settings.sleep_enabled != enabled) {
             settings.sleep_timeout = t;
@@ -31,6 +32,7 @@ struct sleep_timeout_desc {
         }
     }
 };
+static_assert(can_disable<sleep_timeout_desc>);
 
 struct display_contrast_desc {
     static constexpr uint16_t max = 100;
