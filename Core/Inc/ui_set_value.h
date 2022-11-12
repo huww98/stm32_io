@@ -5,6 +5,7 @@
 #include "oled.h"
 #include "ui_base.h"
 #include "ui_menu.h"
+#include <functional>
 
 enum class value_input_type {
     none,
@@ -27,8 +28,9 @@ class value_input {
     int op_dir = 0;
 
   public:
-    uint16_t time;
+    uint16_t value;
     bool enabled = true;
+    std::function<void(uint16_t v)> on_change;
 
     value_input(oled_driver &oled, uint8_t scale=4, uint16_t max_time=50000, value_input_type type=value_input_type::time, std::string_view disabled_text="")
         : oled(oled), scale(scale), max_time(max_time), disabled_text(disabled_text) {
@@ -86,6 +88,11 @@ concept can_disable = requires(T t, uint16_t v, bool enabled) {
 };
 
 template<typename T>
+concept can_preview = requires(T t, uint16_t v) {
+    t.preview(v);
+};
+
+template<typename T>
 constexpr std::string_view disabled_text(const T &desc) {
     if constexpr (can_disable<T>)
         return desc.disabled_text;
@@ -97,37 +104,49 @@ template<value_desc TimeDesc>
 class ui_set_value : public ui_base {
   private:
     oled_driver &oled;
-    value_input _time_input;
+    value_input _value_input;
   public:
-    TimeDesc time_desc;
+    TimeDesc value_desc;
 
     ui_set_value(oled_driver &oled, TimeDesc &&desc)
-        : oled(oled), _time_input(oled, desc.scale, desc.max, desc.type, disabled_text(desc)), time_desc(desc) {}
+        : oled(oled), _value_input(oled, desc.scale, desc.max, desc.type, disabled_text(desc)), value_desc(desc) {
+
+        auto &this_desc = this->value_desc;
+        _value_input.on_change = [&this_desc](uint16_t v) {
+            if constexpr (can_preview<TimeDesc>)
+                this_desc.preview(v);
+        };
+    }
 
     virtual void draw() override {
         oled.page_addressing_mode();
-        put_string_center(oled, time_desc.title_text, 0, true);
+        put_string_center(oled, value_desc.title_text, 0, true);
 
         oled.clear(1);
         oled.vertical_addressing_mode();
 
-        _time_input.time = time_desc.value();
-        _time_input.draw();
+
+
+        _value_input.value = value_desc.value();
+        _value_input.draw();
     }
 
     virtual void handle_button(uint8_t button, button_event event, uint32_t tick) override {
         if (event == button_event::press) {
             if (button == 3) {
                 oled.addressing_range();
-                time_desc.value(_time_input.time);
+                if constexpr (can_disable<TimeDesc>)
+                    value_desc.value(_value_input.value, _value_input.enabled);
+                else
+                    value_desc.value(_value_input.value);
                 pm.pop();
                 return;
             }
         }
-        _time_input.handle_button(button, event, tick);
+        _value_input.handle_button(button, event, tick);
     }
 
     virtual void tick(uint32_t tick) override {
-        _time_input.tick(tick);
+        _value_input.tick(tick);
     }
 };

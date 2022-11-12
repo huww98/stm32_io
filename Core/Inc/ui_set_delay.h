@@ -20,7 +20,7 @@ class ui_set_delay : public ui_base {
 
     void select(uint8_t pos) {
         selected = pos;
-        _time_input.time = timing.shutter_delay[selected];
+        _time_input.value = timing.shutter_delay[selected];
         _time_input.enabled = timing.enabled[selected];
     }
 

@@ -23,15 +23,19 @@ class oled_driver {
     oled_driver(oled_pin_def &&pin_def) : _pin_def(pin_def){};
     const oled_pin_def &pin_def() const { return _pin_def; };
 
-    void init();
+    void init(uint8_t contrast=0x7F);
     void clear(uint8_t begin_page=0, uint8_t end_page=8);
     template <size_t N>
     void i2c_transmit(const std::array<uint8_t, N> &data, uint32_t timeout = 1) {
         i2c_transmit(data.data(), N, timeout);
     }
+    void i2c_transmit(std::initializer_list<uint8_t> data, uint32_t timeout = 1) {
+        i2c_transmit(data.begin(), data.size(), timeout);
+    }
     void i2c_transmit(const uint8_t *data, size_t n, uint32_t timeout = 1) {
         HAL_I2C_Master_Transmit(_pin_def.i2c, OLED_I2C_ADDR, (uint8_t *)data, n, timeout);
     }
+    void contrast(uint8_t contrast);
     void test_seq();
     void page_addressing_mode();
     void set_pos(uint8_t x, uint8_t y);

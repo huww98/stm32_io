@@ -5,8 +5,8 @@
 
 struct settings_t {
     uint8_t contrast = 0x7F;
-    uint16_t sleep_timeout = 60;
     bool sleep_enabled = true;
+    uint16_t sleep_timeout = 60;
 
     void save();
     void load();
@@ -41,6 +41,7 @@ struct display_contrast_desc {
     static constexpr std::string_view title_text = "DISPLAY CONTRAST";
 
     settings_t &settings;
+    oled_driver &oled;
 
     uint16_t value() const { return static_cast<uint16_t>(settings.contrast) * 100u / 256u; }
     void value(uint16_t t) {
@@ -50,4 +51,9 @@ struct display_contrast_desc {
             settings.save();
         }
     }
+    void preview(uint16_t t) {
+        auto c = t * 256u / 100u;
+        oled.contrast(c);
+    }
 };
+static_assert(can_preview<display_contrast_desc>);

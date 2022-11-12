@@ -97,6 +97,10 @@ constexpr std::array<uint8_t, 6> font6x8[] = {
 
 const std::array<uint8_t, 6> &get_font6x8(char c) { return font6x8[c - ' ']; }
 
+void oled_driver::contrast(uint8_t contrast) {
+    i2c_transmit({0x00, 0x81, contrast});
+}
+
 void oled_driver::clear(uint8_t begin_page, uint8_t end_page) {
     std::array<uint8_t, 129> data;
     data[0] = 0x40;
@@ -132,7 +136,7 @@ void oled_driver::test_seq() {
     }
 }
 
-void oled_driver::init() {
+void oled_driver::init(uint8_t contrast) {
     HAL_GPIO_WritePin(_pin_def.rst_port, _pin_def.rst_pin, GPIO_PIN_RESET);
     HAL_Delay(1);
     HAL_GPIO_WritePin(_pin_def.pwr_port, _pin_def.pwr_pin, GPIO_PIN_SET);
@@ -142,12 +146,12 @@ void oled_driver::init() {
 
     clear();
 
-    std::array<uint8_t, 6> cmd = {
+    i2c_transmit({
         0x00, 0xA1, 0xC8, // rotate display 180 degrees
+        0x81, contrast,   // set contrast
         0x8D, 0x14,       // enable charge pump
         0xAF,             // display on
-    };
-    i2c_transmit(cmd);
+    });
 }
 
 void oled_driver::page_addressing_mode() { i2c_transmit(std::array<uint8_t, 3>{0x00, 0x20, 0b10}); }

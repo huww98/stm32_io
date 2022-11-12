@@ -44,7 +44,7 @@ void value_input::draw() {
     int fractional_part = scale;
     bool leading_zero = true;
     while (integer_part) {
-        char digit = '0' + (time / mod) % 10;
+        char digit = '0' + (value / mod) % 10;
         integer_part--;
         mod /= 10;
         if (leading_zero) {
@@ -58,7 +58,7 @@ void value_input::draw() {
     if (fractional_part) {
         add_char('.');
         while (fractional_part) {
-            char digit = '0' + (time / mod) % 10;
+            char digit = '0' + (value / mod) % 10;
             fractional_part--;
             mod /= 10;
             add_char(digit);
@@ -81,15 +81,16 @@ void value_input::handle_button(uint8_t button, button_event event, uint32_t tic
         } else if (op_dir != 0) {
             op_dir = 0;  // cancel operation if multiple buttons are pressed
         } else {
-            if (button == 2 && time < max_time) {
+            if (button == 2 && value < max_time) {
                 op_dir = 1;
-            } else if (button == 0 && time > 0) {
+            } else if (button == 0 && value > 0) {
                 op_dir = -1;
             }
 
             if (op_dir != 0) {
-                time += op_dir;
-                op_delay_start = time;
+                value += op_dir;
+                on_change(value);
+                op_delay_start = value;
                 op_start_tick = tick;
                 this->draw();
             }
@@ -116,7 +117,8 @@ void value_input::tick(uint32_t tick) {
             next_value = 0;
             op_dir = 0;
         }
-        time = next_value;
+        value = next_value;
+        on_change(value);
         this->draw();
     }
 }

@@ -160,7 +160,7 @@ CXXFLAGS += $(CFLAGS) -fno-rtti -fno-threadsafe-statics -fno-exceptions -std=c++
 LDSCRIPT = STM32F103C8Tx_FLASH.ld
 
 # libraries
-LIBS = -lc -lm -lnosys -lstdc++
+LIBS = -lstdc++ -lc -lm -lnosys
 LIBDIR =
 LDFLAGS = $(MCU) $(OPT) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 

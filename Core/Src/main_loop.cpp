@@ -67,7 +67,7 @@ ui_set_value ui_focus_advance(oled, focus_advance_desc{shutter_timing});
 ui_trigger ui_c_trigger(oled, camera_trigger, shutter_timing);
 
 ui_set_value ui_sleep_timeout(oled, sleep_timeout_desc{settings});
-ui_set_value ui_contrast(oled, display_contrast_desc{settings});
+ui_set_value ui_contrast(oled, display_contrast_desc{settings, oled});
 ui_about_t ui_about(oled);
 
 std::array<menu_item, 4> settings_menu_items = {
@@ -102,12 +102,13 @@ ui_menu main_menu(oled, "[CAMERA TRIGGER]", main_menu_items);
 
 extern "C" {
 void main_loop() {
+    settings.load();
+
     shutter_trigger.reset(24);
-    oled.init();
+    oled.init(settings.contrast);
     for (auto &b : bottons)
         b.init();
     shutter_timing.load();
-    settings.load();
 
 #ifndef NDEBUG
     if (HAL_GPIO_ReadPin(BTN3_GPIO_Port, BTN3_Pin) == GPIO_PIN_RESET)

@@ -116,8 +116,8 @@ void ui_set_delay::handle_button(uint8_t button, button_event event, uint32_t ti
     if (event == button_event::press) {
         if (button == 3) {
             oled.addressing_range();
-            timing.dirty |= _time_input.time != timing.shutter_delay[selected] || _time_input.enabled != timing.enabled[selected];
-            timing.shutter_delay[selected] = _time_input.time;
+            timing.dirty |= _time_input.value != timing.shutter_delay[selected] || _time_input.enabled != timing.enabled[selected];
+            timing.shutter_delay[selected] = _time_input.value;
             timing.enabled[selected] = _time_input.enabled;
             pm.pop();
         } else {
