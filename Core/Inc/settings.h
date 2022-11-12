@@ -43,17 +43,17 @@ struct display_contrast_desc {
     settings_t &settings;
     oled_driver &oled;
 
-    uint16_t value() const { return static_cast<uint16_t>(settings.contrast) * 100u / 256u; }
+    uint16_t value() const { return (static_cast<uint16_t>(settings.contrast) * 100u + 127u) / 255u; }
+    uint8_t t2c(uint16_t t) const { return (t * 255u + 50u) / 100u; }
     void value(uint16_t t) {
-        auto c = t * 256u / 100u;
+        auto c = t2c(t);
         if (settings.contrast != c) {
             settings.contrast = c;
             settings.save();
         }
     }
     void preview(uint16_t t) {
-        auto c = t * 256u / 100u;
-        oled.contrast(c);
+        oled.contrast(t2c(t));
     }
 };
 static_assert(can_preview<display_contrast_desc>);
