@@ -11,8 +11,8 @@ struct timing_t {
     std::array<uint16_t, NUM_SLOTS> shutter_delay = {0};
     std::array<bool, NUM_SLOTS> enabled = {false};
 
-    uint16_t base_delay = 200;
-    uint16_t focus_advance = 500;
+    uint16_t base_delay = 500;
+    uint16_t focus_advance = 200;
 
     bool dirty = false;
 
