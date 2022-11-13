@@ -136,6 +136,7 @@ void main_loop() {
         if ((tick - last_activity) / 1000 > settings.sleep_timeout) {
             oled.sleep();
             HAL_GPIO_WritePin(STATUS_GPIO_Port, STATUS_Pin, GPIO_PIN_SET);
+            delay_us(5);  // wait for the I2C STOP condition to be sent
             auto systick_ctrl = SysTick->CTRL;
             SysTick->CTRL = 0;
             HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
