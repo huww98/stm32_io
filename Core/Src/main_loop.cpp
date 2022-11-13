@@ -43,8 +43,8 @@ void test_mode() {
     char str[24];
     while (true) {
         auto tick = HAL_GetTick();
-        for (uint8_t i = 0; i < bottons.size(); i++) {
-            auto event = bottons[i].update(tick);
+        for (uint8_t i = 0; i < buttons.size(); i++) {
+            auto event = buttons[i].update(tick);
             if (event != button_event::none) {
                 sprintf(str, "%ld\tButton %d: %d\n", tick, i, int(event));
                 txt.write_string(str);
@@ -108,7 +108,7 @@ void main_loop() {
 
     shutter_trigger.reset(24);
     oled.init(settings.contrast);
-    for (auto &b : bottons)
+    for (auto &b : buttons)
         b.init();
     shutter_timing.load();
 
@@ -122,12 +122,14 @@ void main_loop() {
     uint32_t last_activity = HAL_GetTick();
     while (true) {
         auto tick = HAL_GetTick();
-        for (uint8_t i = 0; i < bottons.size(); i++) {
-            auto event = bottons[i].update(tick);
+        for (uint8_t i = 0; i < buttons.size(); i++) {
+            auto event = buttons[i].update(tick);
             if (event != button_event::none) {
                 last_activity = tick;
                 pm.current_page().handle_button(i, event, tick);
             }
+            if (buttons[i].pressed())
+                last_activity = tick;
         }
         pm.current_page().tick(tick);
 

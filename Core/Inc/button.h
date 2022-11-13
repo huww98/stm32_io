@@ -24,6 +24,7 @@ class button_driver {
     static constexpr uint32_t DEBOUNCE_TIME = 30;
     button_driver(button_pin_def &&pin_def) : _pin_def(pin_def) {};
     const button_pin_def &pin_def() const { return _pin_def; };
+    bool pressed() const { return _state == GPIO_PIN_RESET; };
 
     void init();
     button_event update(uint32_t current_tick);
