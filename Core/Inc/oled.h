@@ -36,6 +36,8 @@ class oled_driver {
         HAL_I2C_Master_Transmit(_pin_def.i2c, OLED_I2C_ADDR, (uint8_t *)data, n, timeout);
     }
     void contrast(uint8_t contrast);
+    void sleep();
+    void wake();
     void test_seq();
     void page_addressing_mode();
     void set_pos(uint8_t x, uint8_t y);

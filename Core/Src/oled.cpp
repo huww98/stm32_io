@@ -101,6 +101,17 @@ void oled_driver::contrast(uint8_t contrast) {
     i2c_transmit({0x00, 0x81, contrast});
 }
 
+void oled_driver::sleep() {
+    i2c_transmit({0x00, 0xAE, 0x8D, 0x10});
+    // HAL_GPIO_WritePin(_pin_def.pwr_port, _pin_def.pwr_pin, GPIO_PIN_RESET);
+}
+
+void oled_driver::wake() {
+    // HAL_GPIO_WritePin(_pin_def.pwr_port, _pin_def.pwr_pin, GPIO_PIN_SET);
+    HAL_Delay(100);
+    i2c_transmit({0x00, 0x8D, 0x14, 0xAF});
+}
+
 void oled_driver::clear(uint8_t begin_page, uint8_t end_page) {
     std::array<uint8_t, 129> data;
     data[0] = 0x40;
@@ -139,7 +150,7 @@ void oled_driver::test_seq() {
 void oled_driver::init(uint8_t contrast) {
     HAL_GPIO_WritePin(_pin_def.rst_port, _pin_def.rst_pin, GPIO_PIN_RESET);
     HAL_Delay(1);
-    HAL_GPIO_WritePin(_pin_def.pwr_port, _pin_def.pwr_pin, GPIO_PIN_SET);
+    // HAL_GPIO_WritePin(_pin_def.pwr_port, _pin_def.pwr_pin, GPIO_PIN_SET);
     HAL_Delay(100);
     HAL_GPIO_WritePin(_pin_def.rst_port, _pin_def.rst_pin, GPIO_PIN_SET);
     delay_us(5);

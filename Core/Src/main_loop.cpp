@@ -101,6 +101,8 @@ std::array<menu_item, 6> main_menu_items = {
 ui_menu main_menu(oled, "[CAMERA TRIGGER]", main_menu_items);
 
 extern "C" {
+void SystemClock_Config();
+
 void main_loop() {
     settings.load();
 
@@ -117,16 +119,33 @@ void main_loop() {
 
     pm.init(main_menu);
 
+    uint32_t last_activity = HAL_GetTick();
     while (true) {
         auto tick = HAL_GetTick();
         for (uint8_t i = 0; i < bottons.size(); i++) {
             auto event = bottons[i].update(tick);
             if (event != button_event::none) {
+                last_activity = tick;
                 pm.current_page().handle_button(i, event, tick);
             }
         }
         pm.current_page().tick(tick);
-        __WFI();
+
+        if ((tick - last_activity) / 1000 > settings.sleep_timeout) {
+            oled.sleep();
+            HAL_GPIO_WritePin(STATUS_GPIO_Port, STATUS_Pin, GPIO_PIN_SET);
+            auto systick_ctrl = SysTick->CTRL;
+            SysTick->CTRL = 0;
+            HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+
+            SystemClock_Config();
+            SysTick->CTRL = systick_ctrl & (SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk);
+            HAL_GPIO_WritePin(STATUS_GPIO_Port, STATUS_Pin, GPIO_PIN_RESET);
+            oled.wake();
+            last_activity = tick;
+        } else {
+            HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
+        }
     }
 }
 }
