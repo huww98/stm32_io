@@ -144,6 +144,9 @@ void main_loop() {
             SysTick->CTRL = systick_ctrl & (SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk);
             HAL_GPIO_WritePin(STATUS_GPIO_Port, STATUS_Pin, GPIO_PIN_RESET);
             oled.wake();
+            // Ignore the button press that woke us up
+            for (auto &b : buttons)
+                b.init();
             last_activity = tick;
         } else {
             HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
