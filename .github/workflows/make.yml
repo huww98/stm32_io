@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: install deps
-      run: sudo apt install gcc-arm-none-eabi python3-freetype
+      run: sudo apt install gcc-arm-none-eabi python3-freetype python3-numpy
     - name: make
       run: make
     - name: upload
