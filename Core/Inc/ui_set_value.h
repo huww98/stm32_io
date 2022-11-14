@@ -30,7 +30,7 @@ class value_input {
   public:
     uint16_t value;
     bool enabled = true;
-    std::function<void(uint16_t v)> on_change;
+    std::function<void(uint16_t v)> on_change = [](uint16_t v) {};
 
     value_input(oled_driver &oled, uint8_t scale=4, uint16_t max_time=50000, value_input_type type=value_input_type::time, std::string_view disabled_text="")
         : oled(oled), scale(scale), max_time(max_time), disabled_text(disabled_text) {
