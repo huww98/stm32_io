@@ -103,6 +103,7 @@ ui_menu main_menu(oled, "[CAMERA TRIGGER]", main_menu_items);
 extern "C" {
 void SystemClock_Config();
 
+[[noreturn]]
 void main_loop() {
     settings.load();
 
