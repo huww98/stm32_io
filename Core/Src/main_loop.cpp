@@ -9,6 +9,7 @@
 #include "ui_menu.h"
 #include "ui_about.h"
 #include "utils.h"
+#include "power_manager.h"
 #include <cstdio>
 
 oled_driver oled({
@@ -100,6 +101,8 @@ std::array<menu_item, 6> main_menu_items = {
 };
 ui_menu main_menu(oled, "[CAMERA TRIGGER]", main_menu_items);
 
+power_manager power_manager::instance = power_manager(::oled, ::settings);
+
 extern "C" {
 void SystemClock_Config();
 
@@ -120,37 +123,20 @@ void main_loop() {
 
     pm.init(main_menu);
 
-    uint32_t last_activity = HAL_GetTick();
     while (true) {
         auto tick = HAL_GetTick();
         for (uint8_t i = 0; i < buttons.size(); i++) {
             auto event = buttons[i].update(tick);
             if (event != button_event::none) {
-                last_activity = tick;
+                power_manager::get().active(tick);
                 pm.current_page().handle_button(i, event, tick);
             }
             if (buttons[i].pressed())
-                last_activity = tick;
+                power_manager::get().active(tick);
         }
         pm.current_page().tick(tick);
 
-        if ((tick - last_activity) / 1000 > settings.sleep_timeout) {
-            oled.sleep();
-            HAL_GPIO_WritePin(STATUS_GPIO_Port, STATUS_Pin, GPIO_PIN_SET);
-            delay_us(5);  // wait for the I2C STOP condition to be sent
-            auto systick_ctrl = SysTick->CTRL;
-            SysTick->CTRL = 0;
-            HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
-
-            SystemClock_Config();
-            SysTick->CTRL = systick_ctrl & (SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk);
-            HAL_GPIO_WritePin(STATUS_GPIO_Port, STATUS_Pin, GPIO_PIN_RESET);
-            oled.wake();
-            // Ignore the button press that woke us up
-            for (auto &b : buttons)
-                b.init();
-            last_activity = tick;
-        } else {
+        if (!power_manager::get().try_stop(tick)) {
             HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
         }
     }
