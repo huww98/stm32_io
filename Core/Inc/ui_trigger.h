@@ -4,6 +4,7 @@
 #include "timing.h"
 #include "74hc595.h"
 #include "ui_base.h"
+#include "power_manager.h"
 
 class ui_trigger : public ui_base {
   private:
@@ -13,11 +14,13 @@ class ui_trigger : public ui_base {
     uint32_t target_tick = -1;
     uint8_t last_countdown = -1;
     bool last_focused = false;
+    [[no_unique_address]] std::optional<wake_lock> _wake_lock;
 
     void reset_ui() {
         target_tick = -1;
         last_countdown = -1;
         last_focused = false;
+        _wake_lock.reset();
     }
 
   public:

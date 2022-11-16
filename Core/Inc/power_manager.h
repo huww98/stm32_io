@@ -8,6 +8,8 @@
 class wake_lock {
   public:
     wake_lock();
+    wake_lock(wake_lock &&) = delete;
+    wake_lock(const wake_lock &) = delete;
     ~wake_lock();
 };
 

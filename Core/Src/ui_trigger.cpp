@@ -1,5 +1,6 @@
 #include "ui_trigger.h"
 #include "fonts.h"
+#include "power_manager.h"
 #include <algorithm>
 
 constexpr int FOCUS_RO = 24;
@@ -54,6 +55,7 @@ void ui_trigger::handle_button(uint8_t button, button_event event, uint32_t tick
         } else if (button == 3) {
             oled.addressing_range();
             this->reset_ui();
+            camera_trigger.write_focus(GPIO_PIN_SET);
         }
     }
     ui_base::handle_button(button, event, tick);
@@ -180,6 +182,8 @@ void ui_trigger::tick(uint32_t tick) {
     auto target_tick = this->target_tick - 10; // reserve 10ms for task preparation
 
     if (target_tick < tick || countdown != last_countdown || focused != last_focused) {
+        if (!_wake_lock.has_value())
+            _wake_lock.emplace();
         if (focused != last_focused) {
             assert(focused && !last_focused);
             camera_trigger.write_focus(GPIO_PIN_RESET);
