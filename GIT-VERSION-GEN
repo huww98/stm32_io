@@ -8,7 +8,7 @@ LF='
 VN=unknown
 
 if test -d ${GIT_DIR:-.git} -o -f .git; then
-	VN=$(git describe --match "v[0-9]*" --dirty --always)
+	VN=$(git describe --match "v[0-9]*" --always)
     if test "$VN" = "$LF"; then
         exit 1
     fi

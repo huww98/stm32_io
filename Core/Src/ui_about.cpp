@@ -7,7 +7,7 @@ void ui_about_t::draw() {
     put_string_center(oled, "Camera Trigger", 2);
 
     oled.clear(3, 4);
-    put_string(oled, GIT_VERSION, 36, 4);
-    put_string(oled, "by: huww98", 36, 5);
+    put_string_center(oled, GIT_VERSION, 4);
+    put_string_center(oled, "by: huww98", 5);
     oled.clear(6);
 }
